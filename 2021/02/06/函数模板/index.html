@@ -28,7 +28,7 @@
 <meta property="og:description" content="模板是是泛型编程的基础，泛型编程即以一种独立于任何特定类型的方式编写代码。模板是创建泛型类或函数的蓝图或公式。函数模板是将同一种处理过程作用于不同的数据类型。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2021-02-06T09:51:05.101Z">
-<meta property="article:modified_time" content="2021-02-06T09:58:42.166Z">
+<meta property="article:modified_time" content="2021-02-06T10:06:04.294Z">
 <meta property="article:author" content="Bofan Chen">
 <meta property="article:tag" content="学习笔记">
 <meta name="twitter:card" content="summary">
@@ -190,7 +190,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-02-06 17:51:05 / 修改时间：17:58:42" itemprop="dateCreated datePublished" datetime="2021-02-06T17:51:05+08:00">2021-02-06</time>
+              <time title="创建时间：2021-02-06 17:51:05 / 修改时间：18:06:04" itemprop="dateCreated datePublished" datetime="2021-02-06T17:51:05+08:00">2021-02-06</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -224,7 +224,7 @@
       
         <p>首先，模板是因为需要多个将同一种算法应用于不同类型的函数。</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> AnyType&gt;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">Swap</span><span class="params">(AnyType &amp;a, AnyType &amp;b)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	AnyType temp;</span><br><span class="line">	temp = a;</span><br><span class="line">	a = b;</span><br><span class="line">	b = temp;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>通过以上的定义，就能对多种类型的数据进行交换：</p>
+<p>通过以上的定义，能对多种类型的数据进行交换：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> a, b;</span><br><span class="line">Swap(a, b);</span><br><span class="line"><span class="keyword">double</span> c,d;</span><br><span class="line">Swap(c, d);</span><br></pre></td></tr></table></figure>
 <p>编译器会依据参数的类型，使用函数模板生成函数定义，所以模板不是一种函数定义。</p>
 <p>例如交换a，b，会生成一个两个参数类型都是int的函数(a和b的类型需要相同)</p>
