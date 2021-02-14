@@ -28,7 +28,7 @@
 <meta property="og:description" content="“继承”可以是单一继承或多重继承，每一个继承连接（link）可以是public，protected或private，也可以是virtual或non-virtual。然后是成员函数的各个选项：virtual？non-virtual？pure virtual？以及成员函数和其它语言特性的交互影响：缺省参数值与virtual函数有什么交互影响？继承如何影响C++的名称查找规则？设计选项有哪些？如果cla">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2021-02-14T15:57:33.220Z">
-<meta property="article:modified_time" content="2021-02-14T15:57:10.588Z">
+<meta property="article:modified_time" content="2021-02-14T16:19:06.637Z">
 <meta property="article:author" content="Bofan Chen">
 <meta property="article:tag" content="学习笔记">
 <meta name="twitter:card" content="summary">
@@ -188,10 +188,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2021-02-14 23:57:33 / 修改时间：23:57:10" itemprop="dateCreated datePublished" datetime="2021-02-14T23:57:33+08:00">2021-02-14</time>
+              <time title="创建时间：2021-02-14 23:57:33" itemprop="dateCreated datePublished" datetime="2021-02-14T23:57:33+08:00">2021-02-14</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-02-15 00:19:06" itemprop="dateModified" datetime="2021-02-15T00:19:06+08:00">2021-02-15</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -225,7 +231,22 @@
         <h2 id="确定你的-public-继承塑模出-is-a-关系"><a href="#确定你的-public-继承塑模出-is-a-关系" class="headerlink" title="确定你的 public 继承塑模出 is-a 关系"></a>确定你的 public 继承塑模出 is-a 关系</h2><ul>
 <li>“public 继承” 意味 is-a 。适用于 base classes 的每一件事情也都适用于 drived classes，因为每个 drived clasees 也都是一个 base classes。</li>
 </ul>
-<h2 id="避免遮掩继承而来的名称"><a href="#避免遮掩继承而来的名称" class="headerlink" title="避免遮掩继承而来的名称"></a>避免遮掩继承而来的名称</h2>
+<h2 id="避免遮掩继承而来的名称"><a href="#避免遮掩继承而来的名称" class="headerlink" title="避免遮掩继承而来的名称"></a>避免遮掩继承而来的名称</h2><ul>
+<li>drived classes 内的名称会掩盖 base classes 内的名称，在 public 继承下从来没有人希望如此。</li>
+<li>为了让被遮掩的名称再见天日，可使用 using 声明式或转交函数。</li>
+</ul>
+<p>当程序中出现名称后，编译器必须估算它指涉（refer to）什么东西。编译器的做法是查找各作用域，看看有没有某个名为这个名称的<strong>声明式</strong>，首先查找 local 作用域，然后查找外围作用域，最后查找 global 作用域。</p>
+<p>所以在这里，重载继承的 non-virtual 函数也会导致问题：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Base</span> &#123;</span></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">	<span class="keyword">int</span> x;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">mf1</span><span class="params">()</span> </span>= <span class="number">0</span>;</span><br><span class="line">	<span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">mf1</span><span class="params">(<span class="keyword">int</span>)</span></span>;</span><br><span class="line">	<span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">mf2</span><span class="params">()</span></span>;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">mf3</span><span class="params">()</span></span>;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">mf3</span><span class="params">(<span class="keyword">double</span>)</span></span>;</span><br><span class="line">	...</span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Derived</span>:</span> <span class="keyword">public</span> Base &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">mf1</span><span class="params">()</span></span>;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">mf3</span><span class="params">()</span></span>;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">mf4</span><span class="params">()</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Derived d;</span><br><span class="line"><span class="keyword">int</span> x;</span><br><span class="line">...</span><br><span class="line">d.mf1();</span><br><span class="line">d.mf1(x);		<span class="comment">//错误</span></span><br><span class="line">d.mf2();</span><br><span class="line">d.mf3();</span><br><span class="line">d.mf3(x);		<span class="comment">//错误</span></span><br></pre></td></tr></table></figure>
+<p>所以，即使 base classes 和 derived classes 内的函数有不同的参数类型，或者不论函数是 virtual 或 non-virtual 都适用，即base classes 内的 mf1 和 mf3 都被 derived classes 遮掩掉了。</p>
+<p>如果想继承 base classes 的函数，可以使用 using</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Derived</span>:</span> <span class="keyword">public</span> Base &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="keyword">using</span> Base::mf1;</span><br><span class="line">	<span class="keyword">using</span> Base::mf3;</span><br><span class="line">	<span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">mf1</span><span class="params">()</span></span>;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">mf3</span><span class="params">()</span></span>;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">mf4</span><span class="params">()</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>这样就能让 Base classes 内名为 mf1 和 mf3 的所有东西在 Derived 作用域内都可见</p>
+<p>可是这样，所有名为 mf1 和 mf3 都会被继承，如果不想继承这么多，可以使用转交函数。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Derived</span>:</span> <span class="keyword">public</span> Base &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">mf1</span><span class="params">()</span></span></span><br><span class="line"><span class="function">	</span>&#123;Base::mf1(); &#125;</span><br><span class="line">	...</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">Derived d;</span><br><span class="line"><span class="keyword">int</span> x;</span><br><span class="line">d.mf1();		<span class="comment">//正确，调用的是 Derived::mf1</span></span><br><span class="line">d.mf1(x); 		<span class="comment">//错误，Base::mf1()被掩盖了</span></span><br></pre></td></tr></table></figure>
+<p>问题：为什么 using 那里不能指定某个函数，只能指定某个名称，是因为函数名和函数？</p>
+
     </div>
 
     
