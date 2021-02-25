@@ -20,20 +20,25 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="由于多个进程之间拥有不同的内存空间，所以使用进程间通信来实现多个进程间的消息互通。">
+  <meta name="description" content="packet in linux">
 <meta property="og:type" content="article">
-<meta property="og:title" content="管道与FIFO">
-<meta property="og:url" content="http://example.com/2021/02/06/%E7%AE%A1%E9%81%93%E4%B8%8EFIFO/index.html">
+<meta property="og:title" content="linux下packet处理流程">
+<meta property="og:url" content="http://example.com/2021/02/25/linux%E4%B8%8Bpacket%E5%A4%84%E7%90%86%E6%B5%81%E7%A8%8B/index.html">
 <meta property="og:site_name" content="程序设计入微">
-<meta property="og:description" content="由于多个进程之间拥有不同的内存空间，所以使用进程间通信来实现多个进程间的消息互通。">
+<meta property="og:description" content="packet in linux">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2021-02-06T15:56:01.250Z">
-<meta property="article:modified_time" content="2021-02-06T15:59:03.215Z">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210225134920.jpg">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210225135032.jpg">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210225144234.jpg">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210225144344.jpg">
+<meta property="article:published_time" content="2021-02-25T06:46:10.809Z">
+<meta property="article:modified_time" content="2021-02-25T06:45:30.521Z">
 <meta property="article:author" content="Bofan Chen">
 <meta property="article:tag" content="学习笔记">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210225134920.jpg">
 
-<link rel="canonical" href="http://example.com/2021/02/06/%E7%AE%A1%E9%81%93%E4%B8%8EFIFO/">
+<link rel="canonical" href="http://example.com/2021/02/25/linux%E4%B8%8Bpacket%E5%A4%84%E7%90%86%E6%B5%81%E7%A8%8B/">
 
 
 <script id="page-configurations">
@@ -46,7 +51,7 @@
   };
 </script>
 
-  <title>管道与FIFO | 程序设计入微</title>
+  <title>linux下packet处理流程 | 程序设计入微</title>
   
 
 
@@ -166,7 +171,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/02/06/%E7%AE%A1%E9%81%93%E4%B8%8EFIFO/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/02/25/linux%E4%B8%8Bpacket%E5%A4%84%E7%90%86%E6%B5%81%E7%A8%8B/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/logo.jpg">
@@ -179,7 +184,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          管道与FIFO
+          linux下packet处理流程
         </h1>
 
         <div class="post-meta">
@@ -190,7 +195,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-02-06 23:56:01 / 修改时间：23:59:03" itemprop="dateCreated datePublished" datetime="2021-02-06T23:56:01+08:00">2021-02-06</time>
+              <time title="创建时间：2021-02-25 14:46:10 / 修改时间：14:45:30" itemprop="dateCreated datePublished" datetime="2021-02-25T14:46:10+08:00">2021-02-25</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -198,20 +203,20 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/OS/" itemprop="url" rel="index"><span itemprop="name">OS</span></a>
+                  <a href="/categories/%E7%BD%91%E7%BB%9C/" itemprop="url" rel="index"><span itemprop="name">网络</span></a>
                 </span>
                   ，
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/OS/%E9%80%9A%E4%BF%A1/" itemprop="url" rel="index"><span itemprop="name">通信</span></a>
+                  <a href="/categories/%E7%BD%91%E7%BB%9C/%E6%9E%B6%E6%9E%84/" itemprop="url" rel="index"><span itemprop="name">架构</span></a>
                 </span>
                   ，
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/OS/%E9%80%9A%E4%BF%A1/%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1/" itemprop="url" rel="index"><span itemprop="name">进程间通信</span></a>
+                  <a href="/categories/%E7%BD%91%E7%BB%9C/%E6%9E%B6%E6%9E%84/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
                 </span>
             </span>
 
           
-            <div class="post-description">由于多个进程之间拥有不同的内存空间，所以使用进程间通信来实现多个进程间的消息互通。</div>
+            <div class="post-description">packet in linux</div>
 
         </div>
       </header>
@@ -222,18 +227,25 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="管道与FIFO"><a href="#管道与FIFO" class="headerlink" title="管道与FIFO"></a>管道与FIFO</h2><h3 id="管道"><a href="#管道" class="headerlink" title="管道"></a>管道</h3><p>管道由pipe函数创建：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unisted.h&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">pipe</span><span class="params">(<span class="keyword">int</span> fd[<span class="number">2</span>])</span></span>;</span><br></pre></td></tr></table></figure>
-<p>该函数返回两个文件描述符：fd[0]和fd[1]，前者打开来读，后者打开来写。</p>
-<p>宏 S_ISFIFO可用于确定一个文件描述符是管道还是FIFO。它的唯一参数是 stat 结构的 st_mode 成员，计算结果为真或假。对于管道来说，这个 stat 结构是由 fstat 函数填写，对于FIFO来说，是由 fstat、lstat或stat函数填写。</p>
-<p>通常来说，管道一般是用于父子进程之间通信：<br>首先父进程 fork() 出一个子进程，他们都拥有管道的读写端的文件描述符，接着，父进程关闭读端，子进程关闭写端。</p>
-<p>所以可以通过两个管道实现双向通信。</p>
-<h3 id="FIFO"><a href="#FIFO" class="headerlink" title="FIFO"></a>FIFO</h3><p>由于管道无名字，只能用于有一个共同祖先进程的各个进程之间。所以提出了FIFO（first in，first out）。FIFO有一个路径名与之关联，又称为有名管道</p>
-<p>FIFO由mkfifo函数创建</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/types.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">mkfifo</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> * pathname, <span class="keyword">mode_t</span> mode)</span></span>;</span><br><span class="line"><span class="comment">//若成功返回0，出错返回-1</span></span><br></pre></td></tr></table></figure>
-<p>pathname 是Unix的路径名，也是该FIFO的名字。mode 参数指定文件权限位。</p>
-<p>创建一个FIFO后，必须打开来读或者打开来写，不能既读又写。write是往末尾添加数据，read是从开头返回数据。</p>
-<p>当请求写入的数据字节数小于PIPE_BUF时，那么write操作保证是原子性的。但是对于一个FIFO来说，如果A进程没有打开FIFO的写端，如果B进程打开了FIFO的读端，那么B进程就会阻塞在这里。</p>
+        <h2 id="Linux-网络驱动模型"><a href="#Linux-网络驱动模型" class="headerlink" title="Linux 网络驱动模型"></a>Linux 网络驱动模型</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210225134920.jpg"></p>
+<h2 id="Linux-收包过程"><a href="#Linux-收包过程" class="headerlink" title="Linux 收包过程"></a>Linux 收包过程</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210225135032.jpg"></p>
+<h3 id="1、DMA与中断"><a href="#1、DMA与中断" class="headerlink" title="1、DMA与中断"></a>1、DMA与中断</h3><p>如果在非虚拟化环境下，网卡通过DMA把收到的 packet 写进内核的 rx_ring 环形队列，并触发中断。</p>
+<p>如果是虚拟化环境， VM的Manage，即VMM配置GIC ITS（Interrupt Translation Service），建立物理中断与虚拟中断的映射完成中断虚拟化使得网卡能直接向VM发出中断，同时通过IO虚拟化，网卡通过IOMMU将packet直接写入虚拟机内核的 rx_ring</p>
+<h3 id="2、申请空间-———-Top-Half"><a href="#2、申请空间-———-Top-Half" class="headerlink" title="2、申请空间    ——— Top Half"></a>2、申请空间    ——— Top Half</h3><p><em>2的拷贝部分是因为以前的网卡的 rx_ring 比较小，osCPU收到中断后，首先把 rx_ring 拷贝到更大的 RX 队列，现在的网卡能直接写入较大的 rx_ring，不再需要拷贝</em></p>
+<p>CPU收到中断后，调用网卡ISR，即中断handler</p>
+<p>分配 sk_buff 并入 input_pkt_queue （如果队列已满则丢弃）</p>
+<p>发出一个软中断 NET_RX_SOFTIRQ，这个软中断能够被调度</p>
+<h3 id="3、组装、解析-——-Bottom-Half"><a href="#3、组装、解析-——-Bottom-Half" class="headerlink" title="3、组装、解析 —— Bottom Half"></a>3、组装、解析 —— Bottom Half</h3><ul>
+<li>sk_buff 从 input_pkt_queue 传入 process_queue，根据协议类型调用网络层协议的handler</li>
+<li>ip_rcv 执行包头检查，ip_router_input() 进行路由，决定本机/转发/丢弃</li>
+<li>tcp_v4_rcv 执行包头检查，tcp_v4_lookup 查询对应的 socket 和 connection，如果正常，tcp_prequeue将skb放进socket接收队列</li>
+<li>socket随即唤醒所在的进程</li>
+</ul>
+<h2 id="SKB"><a href="#SKB" class="headerlink" title="SKB"></a>SKB</h2><p>sk_buff 本身不存储报文，而是通过指针指向真正的报文内存空间</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">sk_buff</span> &#123;</span></span><br><span class="line">	<span class="comment">/* These two mombers must be first */</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sk_buff</span>	* <span class="title">next</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sk_buff</span>	* <span class="title">prev</span>;</span></span><br><span class="line">	<span class="comment">// 真正指向的数据 buffer</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sock</span>	* <span class="title">sk</span>;</span></span><br><span class="line">	</span><br><span class="line">	<span class="comment">// 缓冲区的头部</span></span><br><span class="line">	<span class="keyword">unsigned</span> <span class="keyword">char</span> *head;</span><br><span class="line">	<span class="comment">// 实际数据的头部</span></span><br><span class="line">	<span class="keyword">unsigned</span> <span class="keyword">char</span> *data;</span><br><span class="line">	<span class="comment">// 实际数据的尾部</span></span><br><span class="line">	<span class="keyword">unsigned</span> <span class="keyword">char</span> *tail;</span><br><span class="line">	<span class="comment">// 缓冲区的尾部</span></span><br><span class="line">	<span class="keyword">unsigned</span> <span class="keyword">char</span> *end;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210225144234.jpg"></p>
+<h2 id="SKB的组织"><a href="#SKB的组织" class="headerlink" title="SKB的组织"></a>SKB的组织</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210225144344.jpg"></p>
+<p>这里用双向链表实现的队列，所以这里可以进行批处理，即一次处理很多 skb</p>
 
     </div>
 
@@ -252,13 +264,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2021/02/06/%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88%E6%A8%A1%E6%9D%BF%E7%B1%BB/" rel="prev" title="智能指针模板类">
-      <i class="fa fa-chevron-left"></i> 智能指针模板类
+    <a href="/2021/02/24/%E6%97%A5%E5%BF%97%E7%B3%BB%E7%BB%9F/" rel="prev" title="日志">
+      <i class="fa fa-chevron-left"></i> 日志
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2021/02/06/%E4%BA%92%E6%96%A5%E9%94%81%E4%B8%8E%E8%AF%BB%E5%86%99%E9%94%81/" rel="next" title="互斥锁与读写锁">
-      互斥锁与读写锁 <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -317,7 +326,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%A1%E9%81%93%E4%B8%8EFIFO"><span class="nav-number">1.</span> <span class="nav-text">管道与FIFO</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AE%A1%E9%81%93"><span class="nav-number">1.1.</span> <span class="nav-text">管道</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#FIFO"><span class="nav-number">1.2.</span> <span class="nav-text">FIFO</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Linux-%E7%BD%91%E7%BB%9C%E9%A9%B1%E5%8A%A8%E6%A8%A1%E5%9E%8B"><span class="nav-number">1.</span> <span class="nav-text">Linux 网络驱动模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Linux-%E6%94%B6%E5%8C%85%E8%BF%87%E7%A8%8B"><span class="nav-number">2.</span> <span class="nav-text">Linux 收包过程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1%E3%80%81DMA%E4%B8%8E%E4%B8%AD%E6%96%AD"><span class="nav-number">2.1.</span> <span class="nav-text">1、DMA与中断</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2%E3%80%81%E7%94%B3%E8%AF%B7%E7%A9%BA%E9%97%B4-%E2%80%94%E2%80%94%E2%80%94-Top-Half"><span class="nav-number">2.2.</span> <span class="nav-text">2、申请空间    ——— Top Half</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3%E3%80%81%E7%BB%84%E8%A3%85%E3%80%81%E8%A7%A3%E6%9E%90-%E2%80%94%E2%80%94-Bottom-Half"><span class="nav-number">2.3.</span> <span class="nav-text">3、组装、解析 —— Bottom Half</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SKB"><span class="nav-number">3.</span> <span class="nav-text">SKB</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SKB%E7%9A%84%E7%BB%84%E7%BB%87"><span class="nav-number">4.</span> <span class="nav-text">SKB的组织</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
