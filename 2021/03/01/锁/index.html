@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="上交IPADS操作系统课程笔记">
+<meta property="og:type" content="article">
+<meta property="og:title" content="同步原语之锁">
+<meta property="og:url" content="http://example.com/2021/03/01/%E9%94%81/index.html">
+<meta property="og:site_name" content="程序设计入微">
+<meta property="og:description" content="上交IPADS操作系统课程笔记">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210222010311.jpg">
+<meta property="article:published_time" content="2021-03-01T03:56:25.031Z">
+<meta property="article:modified_time" content="2021-02-22T05:46:08.000Z">
+<meta property="article:author" content="Bofan Chen">
+<meta property="article:tag" content="学习笔记">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210222010311.jpg">
+
+<link rel="canonical" href="http://example.com/2021/03/01/%E9%94%81/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>同步原语之锁 | 程序设计入微</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">程序设计入微</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/03/01/%E9%94%81/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/logo.jpg">
+      <meta itemprop="name" content="Bofan Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="程序设计入微">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          同步原语之锁
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-03-01 11:56:25" itemprop="dateCreated datePublished" datetime="2021-03-01T11:56:25+08:00">2021-03-01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-02-22 13:46:08" itemprop="dateModified" datetime="2021-02-22T13:46:08+08:00">2021-02-22</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E5%A4%9A%E6%A0%B8/" itemprop="url" rel="index"><span itemprop="name">多核</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E5%A4%9A%E6%A0%B8/%E6%AD%A3%E7%A1%AE%E6%80%A7%E4%BF%9D%E8%AF%81/" itemprop="url" rel="index"><span itemprop="name">正确性保证</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">上交IPADS操作系统课程笔记</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="操作系统在多处理器多核环境下面临的问题"><a href="#操作系统在多处理器多核环境下面临的问题" class="headerlink" title="操作系统在多处理器多核环境下面临的问题"></a>操作系统在多处理器多核环境下面临的问题</h2><p>正确性保证：</p>
+<ul>
+<li>对共享资源的竞争导致错误</li>
+<li>操作系统提供同步原语供开发者使用</li>
+<li>使用同步原语带来的问题</li>
+</ul>
+<h2 id="硬件原语操作"><a href="#硬件原语操作" class="headerlink" title="硬件原语操作"></a>硬件原语操作</h2><ul>
+<li>不可被打断的操作集合</li>
+<li>如同执行一条指令</li>
+<li>其它核心看不到中间状态 all-or-nothing</li>
+</ul>
+<p>硬件原语 CAS：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">CAS</span><span class="params">(<span class="keyword">int</span> *addr, <span class="keyword">int</span> expected, <span class="keyword">int</span> new_value)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">int</span> tmp = *addr;</span><br><span class="line">	<span class="keyword">if</span> (*addr == expected)</span><br><span class="line">		*addr = new_value;</span><br><span class="line">	<span class="keyword">return</span> tmp;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>对于 Compare And Swap(CAS)  这种命令，Inter CPU使用锁总线的方法实现（对任意地址的修改都要经过总线）。CPU 在第二行锁总线，在第五行放总线。</p>
+<p>ARM使用 LL/SC(Load-linked &amp; Store-conditional) 实现，在第二行读的时候<strong>监视</strong>addr，第四行修改的时候看addr是否被其他人修改，如果没人修改就写成功，否则返回到第二行。</p>
+<p>硬件原语 FAA：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">FAA</span><span class="params">(<span class="keyword">int</span> *addr, <span class="keyword">int</span> add_value)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">int</span> tmp = *addr;</span><br><span class="line">	*addr = *addr + add_value;</span><br><span class="line">	<span class="keyword">return</span> tmp;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="自旋锁（Spinlock）"><a href="#自旋锁（Spinlock）" class="headerlink" title="自旋锁（Spinlock）"></a>自旋锁（Spinlock）</h2><p>全局标记 *lock ： 0表示空闲，1表示锁</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//lock 操作</span></span><br><span class="line"><span class="keyword">while</span>(atomic_CAS(lock, <span class="number">0</span>, <span class="number">1</span>) != <span class="number">0</span>)</span><br><span class="line">	<span class="comment">/* Busy-looping */</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//unlock 操作</span></span><br><span class="line">*lock = <span class="number">0</span>;</span><br></pre></td></tr></table></figure>
+<p>对于数据的上锁是通过硬件原语操作完成，所以，锁API为：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">lock</span><span class="params">(<span class="keyword">int</span> *lock)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">while</span>(atomic_CAS(lock, <span class="number">0</span>, <span class="number">1</span>) != <span class="number">0</span>)</span><br><span class="line">	<span class="comment">/* Busy-looping */</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">unlock</span><span class="params">(<span class="keyword">int</span> *lock)</span> </span>&#123;</span><br><span class="line">	*lock = <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="排号锁（Ticket-Lock）"><a href="#排号锁（Ticket-Lock）" class="headerlink" title="排号锁（Ticket Lock）"></a>排号锁（Ticket Lock）</h2><p>由于自旋锁会导致饥饿效应，为了保证竞争者的公平性，可以使用排号锁</p>
+<p>这里使用另一个硬件原语 FAA</p>
+<p>如果使用排号锁，那么就需要使用一个全局变量来表示排号：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//owner: 表示当前的持有者</span></span><br><span class="line"><span class="comment">//next:  表示目前放号的最新值</span></span><br><span class="line"><span class="comment">//拿号</span></span><br><span class="line">my_ticket = atomic_FAA(&amp;lock_next, <span class="number">1</span>);</span><br><span class="line"><span class="comment">//等号</span></span><br><span class="line"><span class="keyword">while</span>(lock-&gt;owner != my_ticket)</span><br><span class="line">	<span class="comment">/* waiting */</span>;</span><br><span class="line"><span class="comment">//叫号</span></span><br><span class="line">lock-&gt;owner++;</span><br></pre></td></tr></table></figure>
+<p>实现：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">lock</span><span class="params">(<span class="keyword">int</span> *lock)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">volatile</span> <span class="keyword">unsigned</span> my_ticket = atomic_FAA(&amp;lock_next, <span class="number">1</span>);</span><br><span class="line">	<span class="keyword">while</span>(lock-&gt;owner != my_ticket)</span><br><span class="line">		<span class="comment">/*busy waiting*/</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">unlock</span><span class="params">(<span class="keyword">int</span> *lock)</span> </span>&#123;</span><br><span class="line">	lock-&gt;owner++;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="读写锁"><a href="#读写锁" class="headerlink" title="读写锁"></a>读写锁</h2><p>因为有些生产消费者模型中，数据是被一方只读，一方只写，这时候使用读写锁能够更好的实现读操作。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">rwlock</span> *<span class="title">lock</span>;</span></span><br><span class="line"><span class="keyword">char</span> data[size];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">reader</span><span class="params">(<span class="keyword">void</span>)</span> </span>&#123;</span><br><span class="line">	lock_reader(lock);</span><br><span class="line">	read_data(data);</span><br><span class="line">	unlock_reader(lock);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">writer</span><span class="params">(<span class="keyword">void</span>)</span> </span>&#123;</span><br><span class="line">	lock_writer(lock);</span><br><span class="line">	updata_data(data);</span><br><span class="line">	unlock_writer(lock);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>读写锁可以针对读者更有偏向性</p>
+<p>当对读者更有偏向性的时候，在 rwlock 结构体中，用一个变量表示当前有多少个读者，如果不为0，写者就不能写数据。</p>
+<h2 id="RCU（Read-Copy-Update）"><a href="#RCU（Read-Copy-Update）" class="headerlink" title="RCU（Read Copy Update）"></a>RCU（Read Copy Update）</h2><p>在读写锁中，读者进入临界区之前，还是有比较繁琐的操作，RCU就是为了简化读的操作。</p>
+<p>为了实现这个，我们需要一个类似于硬件原子操作的方式，让读者要么看到旧的值，要么看到新的值，不会读到任何中间结果。但是硬件的原子操作最多有 128 bit，这对于很多数据来说都太小了，所以不能直接锁数据，那就试试锁指针。</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210222010311.jpg"></p>
+<p>先写好结构体C，然后再使用硬件原子操作更新指针。这样就插入了C，同理能实现删除和更新。</p>
+<p>但是这个操作需要对结构体C的生存期进行管理，因为更新之后，可能还有线程在读取原来的结构体，所以更新指针之后不能直接删除结构体。</p>
+<h2 id="管程"><a href="#管程" class="headerlink" title="管程"></a>管程</h2><p>管程提供了一系列 thread-safe 的接口，开发者直接使用这些接口。</p>
+<h2 id="死锁"><a href="#死锁" class="headerlink" title="死锁"></a>死锁</h2><p>原因：</p>
+<ul>
+<li>互斥访问</li>
+<li>持有并等待</li>
+<li>资源非抢占</li>
+<li>循环等待</li>
+</ul>
+<p>解决方法：</p>
+<ul>
+<li>出问题再处理：死锁的检测与恢复</li>
+<li>设计时避免：死锁预防</li>
+<li>运行时避免死锁：死锁避免</li>
+</ul>
+<p>死锁预防的四个方向：</p>
+<ul>
+<li><p>避免互斥访问：通过其它手段（如代理执行</p>
+</li>
+<li><p>不允许持有并等待：一次性申请所有资源</p>
+</li>
+<li><p>资源允许抢占：需要考虑如何恢复</p>
+</li>
+<li><p>打破循环等待：按照特定顺序获取资源</p>
+<ul>
+<li>所有资源进行编号</li>
+<li>所有进程递增获取</li>
+</ul>
+<p>任意时刻：获取最大资源号的进程可以继续执行，然后释放资源</p>
+</li>
+</ul>
+<p>死锁避免有个重要算法：银行家算法：</p>
+<ul>
+<li>所有进程获取资源需要管理者同意</li>
+<li>管理者预演会不会造成死锁<ul>
+<li>如果会造成：阻塞进程，下次再给</li>
+<li>如果不会造成：给进程该资源</li>
+</ul>
+</li>
+</ul>
+<p>分析可知，操作系统有两个重要的调度因素：优先级、锁</p>
+<p>所以会出现低优先级的进程拿到了资源的锁，导致高优先级进程没法执行。所以有四种解决方案：</p>
+<ul>
+<li><p>不可打断临界区协议（NCP）</p>
+</li>
+<li><p>优先级继承协议（PIP)</p>
+</li>
+<li><p>即时优先级置顶协议（IPCP）</p>
+</li>
+<li><p>原生优先级置顶协议（OPCP）</p>
+</li>
+<li><p>拿到锁的进程关闭所有中断，迅速执行</p>
+</li>
+<li><p>把高优先级进程的优先级交给低优先级进程，让拿锁的进程快速执行结束。</p>
+</li>
+<li><p>拿到锁的进程自动提升到最高优先级，这里需要操作系统考虑清除什么进程需要提升</p>
+</li>
+<li><p>直接给可能获取锁进程中最高优先级，避免未来再被打断，尽快执行完</p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag"># 学习笔记</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/03/01/%E8%BF%90%E7%AE%97%E7%AC%A6%E9%87%8D%E8%BD%BD%E4%B8%8E%E5%8F%8B%E5%85%83%E5%87%BD%E6%95%B0/" rel="prev" title="运算符重载与友元函数">
+      <i class="fa fa-chevron-left"></i> 运算符重载与友元函数
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%9C%A8%E5%A4%9A%E5%A4%84%E7%90%86%E5%99%A8%E5%A4%9A%E6%A0%B8%E7%8E%AF%E5%A2%83%E4%B8%8B%E9%9D%A2%E4%B8%B4%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">1.</span> <span class="nav-text">操作系统在多处理器多核环境下面临的问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A1%AC%E4%BB%B6%E5%8E%9F%E8%AF%AD%E6%93%8D%E4%BD%9C"><span class="nav-number">2.</span> <span class="nav-text">硬件原语操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%87%AA%E6%97%8B%E9%94%81%EF%BC%88Spinlock%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">自旋锁（Spinlock）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8E%92%E5%8F%B7%E9%94%81%EF%BC%88Ticket-Lock%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">排号锁（Ticket Lock）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%BB%E5%86%99%E9%94%81"><span class="nav-number">5.</span> <span class="nav-text">读写锁</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RCU%EF%BC%88Read-Copy-Update%EF%BC%89"><span class="nav-number">6.</span> <span class="nav-text">RCU（Read Copy Update）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%A1%E7%A8%8B"><span class="nav-number">7.</span> <span class="nav-text">管程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%AD%BB%E9%94%81"><span class="nav-number">8.</span> <span class="nav-text">死锁</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Bofan Chen"
+      src="/images/logo.jpg">
+  <p class="site-author-name" itemprop="name">Bofan Chen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">36</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">36</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Bofan Chen</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
