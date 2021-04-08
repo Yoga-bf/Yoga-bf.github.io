@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="MPI 真好用">
+<meta property="og:type" content="article">
+<meta property="og:title" content="分布式时钟同步之平均算法">
+<meta property="og:url" content="http://example.com/2021/04/08/%E5%88%86%E5%B8%83%E5%BC%8F%E6%97%B6%E9%92%9F%E5%90%8C%E6%AD%A5%E4%B9%8B%E5%B9%B3%E5%9D%87%E7%AE%97%E6%B3%95/index.html">
+<meta property="og:site_name" content="程序设计入微">
+<meta property="og:description" content="MPI 真好用">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/%E8%BF%90%E8%A1%8C%E7%BB%93%E6%9E%9C%E5%9B%BE.png">
+<meta property="article:published_time" content="2021-04-08T14:41:33.247Z">
+<meta property="article:modified_time" content="2021-04-08T14:09:32.000Z">
+<meta property="article:author" content="Bofan Chen">
+<meta property="article:tag" content="实验报告">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/%E8%BF%90%E8%A1%8C%E7%BB%93%E6%9E%9C%E5%9B%BE.png">
+
+<link rel="canonical" href="http://example.com/2021/04/08/%E5%88%86%E5%B8%83%E5%BC%8F%E6%97%B6%E9%92%9F%E5%90%8C%E6%AD%A5%E4%B9%8B%E5%B9%B3%E5%9D%87%E7%AE%97%E6%B3%95/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>分布式时钟同步之平均算法 | 程序设计入微</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">程序设计入微</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/04/08/%E5%88%86%E5%B8%83%E5%BC%8F%E6%97%B6%E9%92%9F%E5%90%8C%E6%AD%A5%E4%B9%8B%E5%B9%B3%E5%9D%87%E7%AE%97%E6%B3%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/logo.jpg">
+      <meta itemprop="name" content="Bofan Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="程序设计入微">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          分布式时钟同步之平均算法
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-04-08 22:41:33 / 修改时间：22:09:32" itemprop="dateCreated datePublished" datetime="2021-04-08T22:41:33+08:00">2021-04-08</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" itemprop="url" rel="index"><span itemprop="name">分布式</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E5%AE%9E%E9%AA%8C/" itemprop="url" rel="index"><span itemprop="name">实验</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E5%AE%9E%E9%AA%8C/%E5%88%86%E5%B8%83%E5%BC%8F%E6%97%B6%E9%92%9F%E5%90%8C%E6%AD%A5/" itemprop="url" rel="index"><span itemprop="name">分布式时钟同步</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">MPI 真好用</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="编程环境"><a href="#编程环境" class="headerlink" title="编程环境"></a>编程环境</h2><p>Ubuntu 20<br>gcc 9.3.0<br>g++ 9.3.0<br>gfortran 9.3.0<br>mpich-3.3</p>
+<p><em>本实验使用 MPI 模拟多机环境</em></p>
+<h2 id="实验原理"><a href="#实验原理" class="headerlink" title="实验原理"></a>实验原理</h2><p>在实验中，需要模拟出多个主机，并且每个主机都有一个公认的开始时间 T<sub>0</sub> 。所以在设计  T<sub>0</sub> 时，我是使用非并行变量表示的初始时间，并且使用 R 来代表间隔。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">timeval</span>  <span class="title">tv</span>;</span></span><br><span class="line">gettimeofday(&amp;tv, <span class="literal">NULL</span>);</span><br><span class="line"><span class="keyword">unsigned</span> <span class="keyword">long</span> tt = (<span class="keyword">unsigned</span> <span class="keyword">long</span>)tv.tv_sec * <span class="number">1000</span> + ((<span class="keyword">unsigned</span> <span class="keyword">long</span>)tv.tv_usec)/<span class="number">1000</span>;</span><br><span class="line"><span class="keyword">unsigned</span> <span class="keyword">long</span> T0 = tt;</span><br><span class="line"><span class="keyword">unsigned</span> <span class="keyword">long</span> R = <span class="number">1000</span>;</span><br></pre></td></tr></table></figure>
+<p>由于我是用的是毫秒单位，所以 R=1000 代表间隔是 1s。</p>
+<p>然后通过 MPI 的设置，实现多级环境：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> myid, numprocs;</span><br><span class="line">MPI_Status status;</span><br><span class="line"></span><br><span class="line">MPI_Init(&amp;argc, &amp;argv);</span><br><span class="line">MPI_Comm_rank(MPI_COMM_WORLD, &amp;myid);</span><br><span class="line">MPI_Comm_size(MPI_COMM_WORLD, &amp;numprocs);</span><br></pre></td></tr></table></figure>
+<p>其中，myid 是每个进程的编号，每个进程的编号均不同，且值是从 0 到 numprocs-1，其中 numprocs 变量是进程的数量，这个值是通过main 函数的参数确定的。</p>
+<p>然后为了统计所有进程的时间，我设计了几个变量：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">timeval</span> <span class="title">mytv</span>;</span></span><br><span class="line"><span class="keyword">unsigned</span> <span class="keyword">long</span> my_time = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">unsigned</span> <span class="keyword">long</span> <span class="keyword">long</span> ave_time = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">unsigned</span> <span class="keyword">long</span> time_all[numprocs] = &#123;<span class="number">0</span>&#125;;</span><br></pre></td></tr></table></figure>
+<p>其中 my_time 的值是每个进程获取自己机器的时间，ave_time 是所有进程的平均时间，time_all 数组存放所有进程的时间。</p>
+<p>在每个进程启动之后，首先 sleep R 时间，然后再醒来。当醒来之后，就获取自己的时间，然后发送给其余所有进程：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">sleep(<span class="keyword">double</span>(sleep_time/<span class="number">1000</span>));</span><br><span class="line"></span><br><span class="line">gettimeofday(&amp;mytv, <span class="literal">NULL</span>);</span><br><span class="line">my_time = (<span class="keyword">unsigned</span> <span class="keyword">long</span>)mytv.tv_sec * <span class="number">1000</span> + ((<span class="keyword">unsigned</span> <span class="keyword">long</span>)mytv.tv_usec)/<span class="number">1000</span>;</span><br><span class="line">time_all[myid] = my_time;</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> (source = <span class="number">0</span>; source &lt; numprocs; source++) &#123;</span><br><span class="line">	<span class="keyword">if</span> (source == myid)</span><br><span class="line">		<span class="keyword">continue</span>;</span><br><span class="line">	MPI_Send(&amp;my_time, <span class="number">1</span>, MPI_UNSIGNED_LONG, source, tag, MPI_COMM_WORLD);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>首先，sleep 函数实现睡眠功能，然后使用 gettimeofday 函数获取当前时间，存入 my_time 变量和 time_all[myid] 中，然后使用 MPI_Send 函数给除了本进程之外的所有进程发送它的时间，在代码中，source 代表别的进程。</p>
+<p>然后，在发送完所有信息后，要收集别的进程的信息：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">ave_time = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">for</span> (source = <span class="number">0</span>; source &lt; numprocs; source++) &#123;</span><br><span class="line">	<span class="keyword">if</span> (source == myid)&#123;</span><br><span class="line">		ave_time += time_all[source];</span><br><span class="line">		<span class="keyword">continue</span>;</span><br><span class="line">	&#125;  </span><br><span class="line">	MPI_Recv(&amp;time_all[source], <span class="number">1</span>, MPI_UNSIGNED_LONG, source, tag, MPI_COMM_WORLD, &amp;status);</span><br><span class="line">    ave_time += time_all[source];</span><br><span class="line">&#125;</span><br><span class="line">ave_time = (<span class="keyword">unsigned</span> <span class="keyword">long</span>)(ave_time/numprocs);</span><br></pre></td></tr></table></figure>
+<p>每个进程的时间存储在 time_all 数组中，ave_time 计算这些时间的平均值。MPI_Recv 函数收集来自不同进程的消息。</p>
+<p>经过计算之后，要把本进程的时间修改为收集到的时间，但是我这里没有修改系统时间，而是根据 ave_time 与 my_time 的差值决定 sleep 的时间：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sleep_time = R + ave_time - my_time;</span><br></pre></td></tr></table></figure>
+<p>所以，当 ave_time 大于 my_time，即本进程的时间过早，那么它就会 sleep 更长的时间，这样，就能大致达到均衡各个进程时间的功能。</p>
+<h2 id="结果分析："><a href="#结果分析：" class="headerlink" title="结果分析："></a>结果分析：</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/%E8%BF%90%E8%A1%8C%E7%BB%93%E6%9E%9C%E5%9B%BE.png"></p>
+<p>最上面两行命令分别是编译和运行，其中，第二行的数字 6 代表机器的数目。</p>
+<p>在上图中，每一行开始的数字代表机器编号，后面的 “machine id time is” 是每个机器的时间值，可见在每个机器中，它们收集到的值是相同的。</p>
+<p>最后一行的 avetime 是每个机器计算的平均时间，这是它的结果。可见，代码能够实现每个机器的 ave_time 都相同，且能根据自己的时间与 ave_time 的时间设置不同的 sleep 时间，实现调整时间的效果。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%AE%9E%E9%AA%8C%E6%8A%A5%E5%91%8A/" rel="tag"># 实验报告</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/04/08/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%92%E6%96%A5/" rel="prev" title="分布式互斥">
+      <i class="fa fa-chevron-left"></i> 分布式互斥
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%96%E7%A8%8B%E7%8E%AF%E5%A2%83"><span class="nav-number">1.</span> <span class="nav-text">编程环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E9%AA%8C%E5%8E%9F%E7%90%86"><span class="nav-number">2.</span> <span class="nav-text">实验原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E5%88%86%E6%9E%90%EF%BC%9A"><span class="nav-number">3.</span> <span class="nav-text">结果分析：</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Bofan Chen"
+      src="/images/logo.jpg">
+  <p class="site-author-name" itemprop="name">Bofan Chen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">43</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Bofan Chen</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
