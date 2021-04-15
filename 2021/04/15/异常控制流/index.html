@@ -20,20 +20,23 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="时钟对于多机系统很重要">
+  <meta name="description" content="异常">
 <meta property="og:type" content="article">
-<meta property="og:title" content="时钟同步">
-<meta property="og:url" content="http://example.com/2021/04/07/%E6%97%B6%E9%92%9F%E5%90%8C%E6%AD%A5/index.html">
+<meta property="og:title" content="异常控制流">
+<meta property="og:url" content="http://example.com/2021/04/15/%E5%BC%82%E5%B8%B8%E6%8E%A7%E5%88%B6%E6%B5%81/index.html">
 <meta property="og:site_name" content="程序设计入微">
-<meta property="og:description" content="时钟对于多机系统很重要">
+<meta property="og:description" content="异常">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2021-04-07T08:32:14.280Z">
-<meta property="article:modified_time" content="2021-04-07T07:46:07.000Z">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210415232558.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210415233158.png">
+<meta property="article:published_time" content="2021-04-15T15:57:58.617Z">
+<meta property="article:modified_time" content="2021-04-15T15:56:30.150Z">
 <meta property="article:author" content="Bofan Chen">
 <meta property="article:tag" content="学习笔记">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210415232558.png">
 
-<link rel="canonical" href="http://example.com/2021/04/07/%E6%97%B6%E9%92%9F%E5%90%8C%E6%AD%A5/">
+<link rel="canonical" href="http://example.com/2021/04/15/%E5%BC%82%E5%B8%B8%E6%8E%A7%E5%88%B6%E6%B5%81/">
 
 
 <script id="page-configurations">
@@ -46,7 +49,7 @@
   };
 </script>
 
-  <title>时钟同步 | 程序设计入微</title>
+  <title>异常控制流 | 程序设计入微</title>
   
 
 
@@ -166,7 +169,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/04/07/%E6%97%B6%E9%92%9F%E5%90%8C%E6%AD%A5/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/04/15/%E5%BC%82%E5%B8%B8%E6%8E%A7%E5%88%B6%E6%B5%81/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/logo.jpg">
@@ -179,7 +182,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          时钟同步
+          异常控制流
         </h1>
 
         <div class="post-meta">
@@ -190,7 +193,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-04-07 16:32:14 / 修改时间：15:46:07" itemprop="dateCreated datePublished" datetime="2021-04-07T16:32:14+08:00">2021-04-07</time>
+              <time title="创建时间：2021-04-15 23:57:58 / 修改时间：23:56:30" itemprop="dateCreated datePublished" datetime="2021-04-15T23:57:58+08:00">2021-04-15</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -198,20 +201,20 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" itemprop="url" rel="index"><span itemprop="name">分布式</span></a>
+                  <a href="/categories/OS/" itemprop="url" rel="index"><span itemprop="name">OS</span></a>
                 </span>
                   ，
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E8%AF%BE%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">课程</span></a>
+                  <a href="/categories/OS/CSAPP/" itemprop="url" rel="index"><span itemprop="name">CSAPP</span></a>
                 </span>
                   ，
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E8%AF%BE%E7%A8%8B/%E6%97%B6%E9%92%9F/" itemprop="url" rel="index"><span itemprop="name">时钟</span></a>
+                  <a href="/categories/OS/CSAPP/%E5%BC%82%E5%B8%B8%E6%8E%A7%E5%88%B6%E6%B5%81/" itemprop="url" rel="index"><span itemprop="name">异常控制流</span></a>
                 </span>
             </span>
 
           
-            <div class="post-description">时钟对于多机系统很重要</div>
+            <div class="post-description">异常</div>
 
         </div>
       </header>
@@ -222,17 +225,67 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="时钟同步"><a href="#时钟同步" class="headerlink" title="时钟同步"></a>时钟同步</h2><p>在不同机器上，由于制作工艺的原因，每个机器的时钟晶体振荡器的频率不相同，所以也就导致了各个机器的时钟不同。所以我们需要一些算法上的帮助</p>
-<h2 id="逻辑时钟同步算法"><a href="#逻辑时钟同步算法" class="headerlink" title="逻辑时钟同步算法"></a>逻辑时钟同步算法</h2><p>a → b 读作 “a在b之前发生”。它表示所有的进程都认为事件a先发生，而事件b后发生。且在之前发生是一个传递关系。</p>
-<h3 id="Lamport算法"><a href="#Lamport算法" class="headerlink" title="Lamport算法"></a>Lamport算法</h3><p><strong>算法</strong>：每一个消息都含有一个发送者时钟的发送时间，当消息到达时，接收者将自己的时钟的接收时间与发送时间相比较。如果接收时间小于等于发送时间，则接收者的时间调整为发送时间加1，如果大于则不变。</p>
-<p>可知，Lamport算法有一个要求：任意两个事件的时间之差至少为1.</p>
-<h2 id="物理时钟同步算法"><a href="#物理时钟同步算法" class="headerlink" title="物理时钟同步算法"></a>物理时钟同步算法</h2><p>即某台机器有一个WWW接收器接收标准时间，然后让所有机器的时钟与该机器的时钟进行同步。</p>
-<h3 id="Cristian算法"><a href="#Cristian算法" class="headerlink" title="Cristian算法"></a>Cristian算法</h3><p><strong>算法</strong>：每一台机器周期的向时间服务器发送一个消息请求获得当前标准时间。时间服务器尽快的返回结果，然后每一台机器更改时间为时间服务器的时间。</p>
-<p>但是一般来说，时间不允许向后调整，所以如果机器的时间比时间服务器快，那就提高自己时钟的周期，使得自己的速度慢下来，然后直到时间同步。</p>
-<h3 id="Berkeley算法"><a href="#Berkeley算法" class="headerlink" title="Berkeley算法"></a>Berkeley算法</h3><p>在Berkeley算法中，不需要一个WWW接收器。</p>
-<p><strong>算法</strong>：时间服务器周期性地收集所有机器的时间，计算平均值，然后把时间发送给每一个机器。</p>
-<h3 id="平均算法"><a href="#平均算法" class="headerlink" title="平均算法"></a>平均算法</h3><p>Cristian和Berkeley都是集中式算法，平均算法为非集中式算法。</p>
-<p><strong>算法</strong>：将时间划分为固定长度的再同步间隔。i th 间隔从 To + i R 时刻开始到  To + (i+1) R 时刻结束，其中 To 是过去认可的一个时刻，R是一个系统参数。再每一个间隔的开始，每一个机器都广播自己时钟当前的时间值。由于不同机器上时钟的速度不相同，所以，这些广播不会恰好同时进行。每一个机器广播自己的事件后，它就启动自己的定时器来收集再第 S 间隔内其它机器发来的时间值。当所有机器含有时间值的广播到达后，它计算所有是兼职的平均值，并将自己的时钟调整到这个平均值。</p>
+        <h2 id="异常控制流"><a href="#异常控制流" class="headerlink" title="异常控制流"></a>异常控制流</h2><p>异常控制流（ECF）发生在计算机系统各个层次，是计算机系统中提供并发的基本机制</p>
+<p>在硬件层，异常是由处理器中的事件触发的控制流中的突变。控制流传递给一个软件处理程序，该处理程序进行一些处理，然后返回控制给被中断的控制流。</p>
+<p>有四种不同的异常。</p>
+<p>在操作系统层，内核用ECF提供进程的基本概念。进程提供给应用两个重要的抽象：1）逻辑控制流，它提供给每个程序一个假象，好像它是在独占地使用处理器，2）私有地址空间，它提供给每个程序一个假象，好像它是在独占地使用主存。</p>
+<p>在操作系统和应用程序之间的接口处，应用程序可以创建子进程，等待它们的子进程停止或者中止，运行新的程序，以及捕获来自其它进程的信号。</p>
+<p>最后，在应用层，C程序可以使用非本地跳转来规避正常的调用/返回栈规则，并且直接从一个函数分支到另一个函数。</p>
+<h2 id="异常"><a href="#异常" class="headerlink" title="异常"></a>异常</h2><p>异常是异常控制流的一种形式，它一部分由硬件实现，一部分由操作系统实现。</p>
+<h3 id="异常分类"><a href="#异常分类" class="headerlink" title="异常分类"></a>异常分类</h3><table>
+<thead>
+<tr>
+<th>类别</th>
+<th>原因</th>
+<th>异步/同步</th>
+<th>返回行为</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>中断 (interrupt)</td>
+<td>I/O设备的信号</td>
+<td>异步</td>
+<td>总返回到下一条指令</td>
+</tr>
+<tr>
+<td>陷阱 (trap)</td>
+<td>有意的异常</td>
+<td>同步</td>
+<td>总返回到下一条指令</td>
+</tr>
+<tr>
+<td>故障 (fault)</td>
+<td>潜在可恢复的错误</td>
+<td>同步</td>
+<td>可能返回到当前指令</td>
+</tr>
+<tr>
+<td>中止 (abort)</td>
+<td>不可恢复的错误</td>
+<td>同步</td>
+<td>不会返回</td>
+</tr>
+</tbody></table>
+<p>其中，陷阱最重要的用途是在用户程序和内核之间提供一个像过程一样的接口。</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210415232558.png" alt="image-20210415232557647"></p>
+<h2 id="进程"><a href="#进程" class="headerlink" title="进程"></a>进程</h2><p>异常是允许操作系统内核提供进程概念的基本构造块。</p>
+<p>进程的经典定义就是一个<strong>执行中程序的实例</strong>。系统中的每个程序都运行在某个进程的上下文中。上下文是由程序正确运行所需的状态组成的。这个状态包括存放在内存中的程序的代码和数据，它的栈、通用目的寄存器的内容、程序计数器、环境变量以及打开文件描述符的集合。</p>
+<h3 id="上下文切换"><a href="#上下文切换" class="headerlink" title="上下文切换"></a>上下文切换</h3><p>操作系统内核使用一种称为上下文切换 (context switch) 的较高层形式的异常控制流来实现多任务。</p>
+<p>发生上下文切换的原因</p>
+<ul>
+<li>系统调用</li>
+<li>中断</li>
+<li>发生阻塞</li>
+<li>任务切换</li>
+</ul>
+<p>注意的是，信号的传递都是在内核态向用户态转变的时候，而且，任务切换一般是由一个周期性定时器发出的中断导致的，所以在切换进程的时候都会发生内核态向用户态的转变，所以一定能接收到信号。如图</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210415233158.png" alt="image-20210415233156881"></p>
+<h2 id="信号"><a href="#信号" class="headerlink" title="信号"></a>信号</h2><h3 id="术语"><a href="#术语" class="headerlink" title="术语"></a>术语</h3><p>传送一个信号到目的进程由两个不同步骤组成。</p>
+<p><strong>发送信号</strong>：内核通过更新目的进程上下文中的某个状态，发送（递送）一个信号给目的进程。发送信号可以有两种原因：1）内核检测到一个系统事件，如除零错误或者子进程终止。2）一个进程调用了kill函数，显示地要求内核发送一个信号给目的进程。一个进程可以发送信号给它自己。</p>
+<p><strong>接收信号</strong>：当目的进程被内核强迫以某种方式对信号的发送做出反应时，他就接收了信号。进程可以忽略这个信号，中止或者通过执行一个称为信号处理程序（signal handler）的用户层函数捕获这个信号。</p>
+<p>在信号处理程序中，只调用异步信号安全的函数。信号处理程序的编写规则见 CSAPP P.534。</p>
+<p>信号处理程序的出现使得我们能够自己编写对不同信号的处理方式，但是有些信号不允许自己编写处理函数。</p>
+<p>而且，由于并发导致的程序交错执行，也许会引发一些错误，这些会在并发编程里面详细介绍。</p>
 
     </div>
 
@@ -251,13 +304,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2021/03/01/%E7%B3%BB%E7%BB%9F%E8%99%9A%E6%8B%9F%E5%8C%96%E6%8A%80%E6%9C%AF-%E8%AE%BE%E5%A4%87%E8%99%9A%E6%8B%9F%E5%8C%96/" rel="prev" title="系统虚拟化技术——设备虚拟化">
-      <i class="fa fa-chevron-left"></i> 系统虚拟化技术——设备虚拟化
+    <a href="/2021/04/15/%E9%93%BE%E6%8E%A5/" rel="prev" title="链接">
+      <i class="fa fa-chevron-left"></i> 链接
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2021/04/08/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%92%E6%96%A5/" rel="next" title="分布式互斥">
-      分布式互斥 <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -316,7 +366,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%97%B6%E9%92%9F%E5%90%8C%E6%AD%A5"><span class="nav-number">1.</span> <span class="nav-text">时钟同步</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%BB%E8%BE%91%E6%97%B6%E9%92%9F%E5%90%8C%E6%AD%A5%E7%AE%97%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">逻辑时钟同步算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Lamport%E7%AE%97%E6%B3%95"><span class="nav-number">2.1.</span> <span class="nav-text">Lamport算法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%89%A9%E7%90%86%E6%97%B6%E9%92%9F%E5%90%8C%E6%AD%A5%E7%AE%97%E6%B3%95"><span class="nav-number">3.</span> <span class="nav-text">物理时钟同步算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Cristian%E7%AE%97%E6%B3%95"><span class="nav-number">3.1.</span> <span class="nav-text">Cristian算法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Berkeley%E7%AE%97%E6%B3%95"><span class="nav-number">3.2.</span> <span class="nav-text">Berkeley算法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%B3%E5%9D%87%E7%AE%97%E6%B3%95"><span class="nav-number">3.3.</span> <span class="nav-text">平均算法</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%82%E5%B8%B8%E6%8E%A7%E5%88%B6%E6%B5%81"><span class="nav-number">1.</span> <span class="nav-text">异常控制流</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%82%E5%B8%B8"><span class="nav-number">2.</span> <span class="nav-text">异常</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%82%E5%B8%B8%E5%88%86%E7%B1%BB"><span class="nav-number">2.1.</span> <span class="nav-text">异常分类</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%9B%E7%A8%8B"><span class="nav-number">3.</span> <span class="nav-text">进程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2"><span class="nav-number">3.1.</span> <span class="nav-text">上下文切换</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%A1%E5%8F%B7"><span class="nav-number">4.</span> <span class="nav-text">信号</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%AF%E8%AF%AD"><span class="nav-number">4.1.</span> <span class="nav-text">术语</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
