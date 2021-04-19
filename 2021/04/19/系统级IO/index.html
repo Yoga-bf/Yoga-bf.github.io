@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Linux的一切皆文件思想，和I&#x2F;O结合，是一种很好的抽象">
+<meta property="og:type" content="article">
+<meta property="og:title" content="系统级I&#x2F;O">
+<meta property="og:url" content="http://example.com/2021/04/19/%E7%B3%BB%E7%BB%9F%E7%BA%A7IO/index.html">
+<meta property="og:site_name" content="程序设计入微">
+<meta property="og:description" content="Linux的一切皆文件思想，和I&#x2F;O结合，是一种很好的抽象">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210419124537556.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210419131500387.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210419132131087.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210419132142832.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210419132316655.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210419132425765.png">
+<meta property="article:published_time" content="2021-04-19T05:30:11.530Z">
+<meta property="article:modified_time" content="2021-04-19T05:24:58.000Z">
+<meta property="article:author" content="Bofan Chen">
+<meta property="article:tag" content="学习笔记">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210419124537556.png">
+
+<link rel="canonical" href="http://example.com/2021/04/19/%E7%B3%BB%E7%BB%9F%E7%BA%A7IO/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>系统级I/O | 程序设计入微</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">程序设计入微</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/04/19/%E7%B3%BB%E7%BB%9F%E7%BA%A7IO/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/logo.jpg">
+      <meta itemprop="name" content="Bofan Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="程序设计入微">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          系统级I/O
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-04-19 13:30:11 / 修改时间：13:24:58" itemprop="dateCreated datePublished" datetime="2021-04-19T13:30:11+08:00">2021-04-19</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/OS/" itemprop="url" rel="index"><span itemprop="name">OS</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/OS/CSAPP/" itemprop="url" rel="index"><span itemprop="name">CSAPP</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/OS/CSAPP/%E7%B3%BB%E7%BB%9F%E7%BA%A7I-O/" itemprop="url" rel="index"><span itemprop="name">系统级I/O</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">Linux的一切皆文件思想，和I/O结合，是一种很好的抽象</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="C系统级I-O分类"><a href="#C系统级I-O分类" class="headerlink" title="C系统级I/O分类"></a>C系统级I/O分类</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210419124537556.png" alt="image-20210419124537556"></p>
+<p>其中，RIO（Robust I/O，健壮的包）</p>
+<p>在某些情况下，read和write传送的字节比应用程序要求的更少，这些不足值（short count）不表示有错误，原因是：</p>
+<ul>
+<li>读时遇到EOF</li>
+<li>从终端读文本行</li>
+<li>读和写网络套接字‘</li>
+</ul>
+<p>因为这些不足值的原因，我们基本使用 RIO 来做网络通信时的函数。</p>
+<p>RIO 提供了两类不同的函数：</p>
+<ul>
+<li>无缓冲的输入输出函数。这些函数直接在内存和文件之间传送数据，没有应用级缓冲。它们对将二进制数据读写到网络和从网络读写二进制数据尤其有用</li>
+<li>带缓冲的输入函数。这些函数允许我们高效地从文件中读取文本行和二进制数据，这些文件的内容缓存在应用级缓冲区内，类似于 printf 这样的标准 I/O 函数提供的缓冲区。而且带缓冲的 RIO 输入函数是线程安全的，它在同一个描述符上可以被交错地调用。例如，可以从一个描述符中读一些文本行，然后读取一些二进制数据，接着再多读取一些文本行。</li>
+</ul>
+<h3 id="无缓冲"><a href="#无缓冲" class="headerlink" title="无缓冲"></a>无缓冲</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">ssize_t</span> <span class="title">rio_readn</span><span class="params">(<span class="keyword">int</span> fd, <span class="keyword">void</span> *usrbuf, <span class="keyword">size_t</span> n)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">ssize_t</span> <span class="title">rio_writen</span><span class="params">(<span class="keyword">int</span> fd, <span class="keyword">void</span> *usrbuf, <span class="keyword">size_t</span> n)</span></span>;</span><br></pre></td></tr></table></figure>
+<h3 id="带缓冲"><a href="#带缓冲" class="headerlink" title="带缓冲"></a>带缓冲</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">rio_readinitb</span><span class="params">(<span class="keyword">rio_t</span> *rp, <span class="keyword">int</span> fd)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">ssize_t</span> <span class="title">rio_readlineb</span><span class="params">(<span class="keyword">rio_t</span> *rp, <span class="keyword">void</span> *usrbuf, <span class="keyword">size_t</span> maxlen)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">ssize_t</span> <span class="title">rio_readnb</span><span class="params">(<span class="keyword">rio_t</span> *rp, <span class="keyword">void</span> *usrbuf, <span class="keyword">size_t</span> n)</span></span>;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> RIO_BUFSIZE 8192</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">	<span class="keyword">int</span> rio_fd;</span><br><span class="line">	<span class="keyword">int</span> rio_cut;</span><br><span class="line">	<span class="keyword">char</span> *rio_bufptr;</span><br><span class="line">	<span class="keyword">char</span> rio_buf[RIO_BUFSIZE];</span><br><span class="line">&#125; <span class="keyword">rio_t</span>;</span><br></pre></td></tr></table></figure>
+<p>可以看出，rio_t 自带了一部分缓冲区，即应用级缓冲区，这样，在调用 rio_readlineb 函数（即读取一行）时，就不用没读取一个字符就调用 read 进入内核态执行读取任务，而是可以通过一个缓冲函数 rio_readnb ，每次读取 RIO_BUFSIZE 的内容到内核缓冲区。</p>
+<h2 id="文件元数据"><a href="#文件元数据" class="headerlink" title="文件元数据"></a>文件元数据</h2><p>应用程序通过调用 stat 和 fstat 函数，能够检索到关于文件的信息。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">stat</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *filename, struct stat *buf)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">fstat</span><span class="params">(<span class="keyword">int</span> fd, struct stat *buf)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>stat 以一个文件名作为输入，并填入 stat 的数据结构的各个成员。</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210419131500387.png" alt="image-20210419131500387"></p>
+<h2 id="读取目录内容"><a href="#读取目录内容" class="headerlink" title="读取目录内容"></a>读取目录内容</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/types.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;dirent.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function">DIR *<span class="title">opendir</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *name)</span></span>;</span><br><span class="line"><span class="function">struct dirent *<span class="title">readdir</span><span class="params">(DIR *dirp)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>函数 opendir 以路径名作为参数，返回指向目录流（directory stream）的指针。</p>
+<p>每次调用 readdir 都会返回流 dirp 中下一个目录项的指针，如果没有就返回 NULL；</p>
+<h2 id="共享文件"><a href="#共享文件" class="headerlink" title="共享文件"></a>共享文件</h2><p>内核使用三个相关的数据结构表示打开的文件：</p>
+<ul>
+<li>描述符表（descriptor table）</li>
+<li>文件表（file table）</li>
+<li>v-node 表（v-node table）</li>
+</ul>
+<p>描述符表时每个进程都独有的，每个表项指向文件表的一个表象。</p>
+<p>所有的进程共享文件表。每个表象组成当前的文件位置，引用计数（即指向该表象的描述符表项数），以及一个指向 v-node 表对应表象的指针。关闭一个描述符会较少一个引用计数，当计数为0时，内核删除这个表项。</p>
+<p>所有进程共享 v-node 表。每个表包含 stat 结构大多数信息。</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210419132131087.png" alt="image-20210419132131087"></p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210419132142832.png" alt="image-20210419132142832"></p>
+<p>可以看出，文件表的内容包含文件位置，所以对一个文件调用多次 open ，就会产生多个文件表项，但是它们指向同一个 v-node 表项。</p>
+<p>但是使用 fork 函数时，子进程会共享父进程描述表，即它们指向同样的文件表：</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210419132316655.png" alt="image-20210419132316655"></p>
+<h2 id="I-O-重定向"><a href="#I-O-重定向" class="headerlink" title="I/O 重定向"></a>I/O 重定向</h2><p>有个文件表的概念，就能清楚I/O重定向的工作原理了。</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210419132425765.png" alt="image-20210419132425765"></p>
+<p>这里，将 fd1 的I/O重定向到 fd4 。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag"># 学习笔记</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/04/18/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" rel="prev" title="内存分配">
+      <i class="fa fa-chevron-left"></i> 内存分配
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#C%E7%B3%BB%E7%BB%9F%E7%BA%A7I-O%E5%88%86%E7%B1%BB"><span class="nav-number">1.</span> <span class="nav-text">C系统级I&#x2F;O分类</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%97%A0%E7%BC%93%E5%86%B2"><span class="nav-number">1.1.</span> <span class="nav-text">无缓冲</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%A6%E7%BC%93%E5%86%B2"><span class="nav-number">1.2.</span> <span class="nav-text">带缓冲</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E5%85%83%E6%95%B0%E6%8D%AE"><span class="nav-number">2.</span> <span class="nav-text">文件元数据</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%BB%E5%8F%96%E7%9B%AE%E5%BD%95%E5%86%85%E5%AE%B9"><span class="nav-number">3.</span> <span class="nav-text">读取目录内容</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B1%E4%BA%AB%E6%96%87%E4%BB%B6"><span class="nav-number">4.</span> <span class="nav-text">共享文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#I-O-%E9%87%8D%E5%AE%9A%E5%90%91"><span class="nav-number">5.</span> <span class="nav-text">I&#x2F;O 重定向</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Bofan Chen"
+      src="/images/logo.jpg">
+  <p class="site-author-name" itemprop="name">Bofan Chen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">47</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Bofan Chen</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
