@@ -20,20 +20,23 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="this指针指向用来调用成员函数的对象（this 被作为隐藏参数传递给方法。">
+  <meta name="description" content="如果每次虚拟地址映射到物理地址都需要经过MMU，那会导致性能较差，同样的，我们使用TLB作为MMU的缓存">
 <meta property="og:type" content="article">
-<meta property="og:title" content="this 指针">
-<meta property="og:url" content="http://example.com/2021/03/01/this%E6%8C%87%E9%92%88%E5%92%8C%E7%B1%BB%E6%95%B0%E7%BB%84/index.html">
+<meta property="og:title" content="TLB原理">
+<meta property="og:url" content="http://example.com/2021/04/25/TLB%E5%8E%9F%E7%90%86/index.html">
 <meta property="og:site_name" content="程序设计入微">
-<meta property="og:description" content="this指针指向用来调用成员函数的对象（this 被作为隐藏参数传递给方法。">
+<meta property="og:description" content="如果每次虚拟地址映射到物理地址都需要经过MMU，那会导致性能较差，同样的，我们使用TLB作为MMU的缓存">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2021-03-01T04:13:07.844Z">
-<meta property="article:modified_time" content="2021-02-06T15:51:17.175Z">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210425140944826.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210425141840638.png">
+<meta property="article:published_time" content="2021-04-25T06:35:51.806Z">
+<meta property="article:modified_time" content="2021-04-25T06:34:37.000Z">
 <meta property="article:author" content="Bofan Chen">
 <meta property="article:tag" content="学习笔记">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210425140944826.png">
 
-<link rel="canonical" href="http://example.com/2021/03/01/this%E6%8C%87%E9%92%88%E5%92%8C%E7%B1%BB%E6%95%B0%E7%BB%84/">
+<link rel="canonical" href="http://example.com/2021/04/25/TLB%E5%8E%9F%E7%90%86/">
 
 
 <script id="page-configurations">
@@ -46,7 +49,7 @@
   };
 </script>
 
-  <title>this 指针 | 程序设计入微</title>
+  <title>TLB原理 | 程序设计入微</title>
   
 
 
@@ -166,7 +169,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/03/01/this%E6%8C%87%E9%92%88%E5%92%8C%E7%B1%BB%E6%95%B0%E7%BB%84/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/04/25/TLB%E5%8E%9F%E7%90%86/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/logo.jpg">
@@ -179,7 +182,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          this 指针
+          TLB原理
         </h1>
 
         <div class="post-meta">
@@ -188,36 +191,30 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
+              
 
-              <time title="创建时间：2021-03-01 12:13:07" itemprop="dateCreated datePublished" datetime="2021-03-01T12:13:07+08:00">2021-03-01</time>
+              <time title="创建时间：2021-04-25 14:35:51 / 修改时间：14:34:37" itemprop="dateCreated datePublished" datetime="2021-04-25T14:35:51+08:00">2021-04-25</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-02-06 23:51:17" itemprop="dateModified" datetime="2021-02-06T23:51:17+08:00">2021-02-06</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C++</span></a>
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
                 </span>
                   ，
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/C-primer/" itemprop="url" rel="index"><span itemprop="name">C++ primer</span></a>
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E9%AB%98%E9%80%9F%E7%BC%93%E5%AD%98%E4%B8%8E%E4%B8%80%E8%87%B4%E6%80%A7/" itemprop="url" rel="index"><span itemprop="name">高速缓存与一致性</span></a>
                 </span>
                   ，
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/C-primer/%E7%B1%BB/" itemprop="url" rel="index"><span itemprop="name">类</span></a>
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E9%AB%98%E9%80%9F%E7%BC%93%E5%AD%98%E4%B8%8E%E4%B8%80%E8%87%B4%E6%80%A7/TLB/" itemprop="url" rel="index"><span itemprop="name">TLB</span></a>
                 </span>
             </span>
 
           
-            <div class="post-description">this指针指向用来调用成员函数的对象（this 被作为隐藏参数传递给方法。</div>
+            <div class="post-description">如果每次虚拟地址映射到物理地址都需要经过MMU，那会导致性能较差，同样的，我们使用TLB作为MMU的缓存</div>
 
         </div>
       </header>
@@ -228,29 +225,21 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="this指针"><a href="#this指针" class="headerlink" title="this指针"></a>this指针</h2><p>针对上面的 Stock 类，如何能让程序查看一系列股票，找到价格最高的那一支。</p>
-<p>我们可以在类中定义类声明：</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Stock</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">	...</span><br><span class="line">	<span class="keyword">double</span> total_val;</span><br><span class="line">	...</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="function"><span class="keyword">double</span> <span class="title">total</span><span class="params">()</span> <span class="keyword">const</span> </span>&#123; <span class="keyword">return</span> total_val; &#125;</span><br><span class="line">	...</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-<p>这样就能访问每个类的 total_val 值。但是我们可以使用别的方法，这种方法时定义一个成员函数，它查看两个 Stock 对象，并返回股价较高的那个对象的引用。</p>
-<p>考虑到效率问题，使用引用来作为参数，并返回引用，所以函数原型为：</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">const</span> Stock &amp; <span class="title">topval</span><span class="params">(<span class="keyword">const</span> Stock &amp; s)</span> <span class="keyword">const</span></span>;</span><br></pre></td></tr></table></figure>
-<p>该函数隐式的访问一个对象，显式的访问另一个对象，并返回其中一个对象的引用</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">top = stock1.topval(stock2);</span><br><span class="line">top = stock2.topval(stock1);</span><br></pre></td></tr></table></figure>
-<p>第一个隐式的访问 stock1 ，显式访问 stock2 </p>
-<p>下面是实现部分：</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">const</span> Stock &amp; <span class="title">Stock::topval</span><span class="params">(<span class="keyword">const</span> Stock &amp; s)</span> <span class="keyword">const</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (s.total_val &gt; total_val)</span><br><span class="line">        <span class="keyword">return</span> s;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="keyword">return</span> ???;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>这里可以看出，如果s的total_val大，可以返回 s，因为 s 是 stock2的引用（即stock2的别名），但是stock1没有别名。所以这里就使用 this 的特殊指针。</p>
-<p>this<strong>指针指向</strong>用来调用成员函数的对象（this 被作为隐藏参数传递给方法）。</p>
-<p>这样，上面的实现可以写为：</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">const</span> Stock &amp; <span class="title">Stock::topval</span><span class="params">(<span class="keyword">const</span> Stock &amp; s)</span> <span class="keyword">const</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (s.total_val &gt; total_val)</span><br><span class="line">        <span class="keyword">return</span> s;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="keyword">return</span> *<span class="keyword">this</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-
-
-
-
-
+        <h2 id="什么是-TLB"><a href="#什么是-TLB" class="headerlink" title="什么是 TLB"></a>什么是 TLB</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210425140944826.png" alt="image-20210425140944826"></p>
+<p>MMU根据页表基地址寄存器从PGD页表一路查到PTE页表，最终找到物理地址。</p>
+<p>同样的，类比于 cache 相对于 memory，TLB 也是一种高速缓存，同样的，TLB 也可能存在别名和歧义问题。<a target="_blank" rel="noopener" href="http://yogacbf.com/2021/04/25/Cache%E6%A8%A1%E5%9E%8B/">Cache模型</a></p>
+<h2 id="别名问题"><a href="#别名问题" class="headerlink" title="别名问题"></a>别名问题</h2><p>因为在这里，不同的虚拟地址映射到相同物理地址是可以的。即，一个物理地址映射到多个虚拟地址，一个虚拟地址仅仅映射到一个物理地址，这里仅仅进行地址转换，所以不存在别名问题。</p>
+<h2 id="歧义问题"><a href="#歧义问题" class="headerlink" title="歧义问题"></a>歧义问题</h2><p>显然，不同进程的虚拟地址范围是一样的，所以 TLB 缓存的内容会有歧义问题。即A进程的虚拟地址映射到的物理地址和B进程不同，如果不采取措施，A进程可能会尝试访问B进程的内容。</p>
+<p>同样的，我们可以采用 flush TLB 的方法来解决这个问题，但是这样同样会导致性能损失。</p>
+<p>思考，如何能够TLB能够携带进程信息。一种简单的idea，每个TLB的匹配项目里面增加进程ID信息。</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210425141840638.png" alt="image-20210425141840638"></p>
+<p>TLB添加一项ASID(Address Space ID)的匹配。ASID就类似进程ID一样，用来区分不同进程的TLB表项。这样在进程切换的时候就不需要flush TLB。但是仍然需要软件管理和分配ASID。</p>
+<p>ASID和进程ID是不同的，ASID一般8bit或者16bit，远远小于进程ID数量。没创建一个新的进程，就分配一个ASID，如果ASID分配完，就 flush TLB。重新分配。</p>
+<h2 id="内核空间"><a href="#内核空间" class="headerlink" title="内核空间"></a>内核空间</h2><p>由于内核空间的地址是共享的，如果进程A和进程B共享了一部分内核空间的内容，当进程B进入内核后，它可以采用进程A的TLB，但是由于ASID不同，所以就会TLB miss。为了解决这个问题，引入了global 映射。针对内核空间这种全局的映射关系称为 global 映射，对于进程的映射称为 non-global 映射。当虚拟地址映射物理地址关系缓存到TLB时，将nG bit也存储下来。当判断是否命中TLB时，当比较tag相等时，再判断是不是global映射，如果是的话，直接判断TLB hit，无需比较ASID。当不是global映射时，最后比较ASID判断是否TLB hit。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>所以，当 ASID 分配完的时候我们需要 flush TLB。ASID的管理可以使用bitmap管理，flush TLB后clear整个bitmap。这里，需要注意的是，进程是经常运行的进程，而不是总共的进程。</p>
+<p>当建立页表映射的时候，也需要 flush 虚拟地址对应的 TLB 表项。进程创建，page fault 都会建立页表映射。</p>
+<p><em>reference</em></p>
+<p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/108425561">TLB原理 </a></p>
 
     </div>
 
@@ -269,13 +258,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2021/03/01/linux%E4%B8%8Bpacket%E5%A4%84%E7%90%86%E6%B5%81%E7%A8%8B/" rel="prev" title="linux下packet处理流程">
-      <i class="fa fa-chevron-left"></i> linux下packet处理流程
+    <a href="/2021/04/25/Cache%E6%A8%A1%E5%9E%8B/" rel="prev" title="Cache模型">
+      <i class="fa fa-chevron-left"></i> Cache模型
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2021/03/01/%E4%BA%92%E6%96%A5%E9%94%81%E4%B8%8E%E8%AF%BB%E5%86%99%E9%94%81/" rel="next" title="互斥锁与读写锁">
-      互斥锁与读写锁 <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -334,7 +320,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#this%E6%8C%87%E9%92%88"><span class="nav-number">1.</span> <span class="nav-text">this指针</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF-TLB"><span class="nav-number">1.</span> <span class="nav-text">什么是 TLB</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%AB%E5%90%8D%E9%97%AE%E9%A2%98"><span class="nav-number">2.</span> <span class="nav-text">别名问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%AD%A7%E4%B9%89%E9%97%AE%E9%A2%98"><span class="nav-number">3.</span> <span class="nav-text">歧义问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%85%E6%A0%B8%E7%A9%BA%E9%97%B4"><span class="nav-number">4.</span> <span class="nav-text">内核空间</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
