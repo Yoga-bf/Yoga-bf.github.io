@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="因为CPU的速度远远大于内存的速度，所以需要中间Cache">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Cache模型">
+<meta property="og:url" content="http://example.com/2021/04/25/Cache%E6%A8%A1%E5%9E%8B/index.html">
+<meta property="og:site_name" content="程序设计入微">
+<meta property="og:description" content="因为CPU的速度远远大于内存的速度，所以需要中间Cache">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210425111354706.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210425111815947.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210425111900852.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210425112445772.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210425113018792.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210425114100961.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210425114247622.png">
+<meta property="article:published_time" content="2021-04-25T03:46:37.349Z">
+<meta property="article:modified_time" content="2021-04-25T03:44:05.000Z">
+<meta property="article:author" content="Bofan Chen">
+<meta property="article:tag" content="学习笔记">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210425111354706.png">
+
+<link rel="canonical" href="http://example.com/2021/04/25/Cache%E6%A8%A1%E5%9E%8B/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Cache模型 | 程序设计入微</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">程序设计入微</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/04/25/Cache%E6%A8%A1%E5%9E%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/logo.jpg">
+      <meta itemprop="name" content="Bofan Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="程序设计入微">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Cache模型
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-04-25 11:46:37 / 修改时间：11:44:05" itemprop="dateCreated datePublished" datetime="2021-04-25T11:46:37+08:00">2021-04-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E9%AB%98%E9%80%9F%E7%BC%93%E5%AD%98%E4%B8%8E%E4%B8%80%E8%87%B4%E6%80%A7/" itemprop="url" rel="index"><span itemprop="name">高速缓存与一致性</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E9%AB%98%E9%80%9F%E7%BC%93%E5%AD%98%E4%B8%8E%E4%B8%80%E8%87%B4%E6%80%A7/Cache/" itemprop="url" rel="index"><span itemprop="name">Cache</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">因为CPU的速度远远大于内存的速度，所以需要中间Cache</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="模型"><a href="#模型" class="headerlink" title="模型"></a>模型</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210425111354706.png" alt="image-20210425111354706"></p>
+<p>L1 cache 分为单独的 instruction cache（ICache）和 data cache（DCache）。L1 cache 是 CPU独有的，每个CPU都有个 L1 cache。一个 cluster 内的所有的 CPU 共享一个 L2 cache，L2 cache 不区分指令和数据，都可以缓存。所有 cluster 之间共享 L3 cache。L3 cache 通过总线和主存相连。</p>
+<h2 id="直接映射缓存"><a href="#直接映射缓存" class="headerlink" title="直接映射缓存"></a>直接映射缓存</h2><p>加入 cache 是64 Bytes，cache line 大小是8字节</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210425111815947.png" alt="image-20210425111815947"></p>
+<p>如果 CPU 要从一个地址取内容，就要查看缓存中是否有它需要的信息</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210425111900852.png" alt="image-20210425111900852"></p>
+<p>一个64位的地址信息，被分为 tag、index 和 offset。如图可知各个部分的功能。</p>
+<p>但是这种直接映射有一些缺点，例如多个不同地址的内容容易映射到同一个 cache line。只要地址的 index 位置信息相同，就会映射到同一个 cache line。容易造成 cache 颠簸。为了解决这个问题，引入了多路组相连缓存</p>
+<h2 id="两路组相连缓存"><a href="#两路组相连缓存" class="headerlink" title="两路组相连缓存"></a>两路组相连缓存</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210425112445772.png" alt="image-20210425112445772"></p>
+<p>可以看出 index 的位数只用了两位，在比较 tag 的时候可以同时比较两个组的 tag。就大大缓解了直接映射的 cache 颠簸问题。</p>
+<h2 id="虚拟地址还是物理地址"><a href="#虚拟地址还是物理地址" class="headerlink" title="虚拟地址还是物理地址"></a>虚拟地址还是物理地址</h2><p>在上面的讨论中，我们只说了CPU发出一个地址，然后匹配 cache 内容。但是却没有说明这个地址是虚拟地址还是物理地址，众所周知，在内核启动后，虚拟地址映射启动后，进程发送的地址都是虚拟地址，所以CPU发送的地址是虚拟地址。所以就引出了一些问题；</p>
+<h3 id="虚拟高速缓存（VIVT-Virtually-Indexed-Virtually-Tagged）"><a href="#虚拟高速缓存（VIVT-Virtually-Indexed-Virtually-Tagged）" class="headerlink" title="虚拟高速缓存（VIVT     Virtually Indexed Virtually Tagged）"></a>虚拟高速缓存（VIVT     Virtually Indexed Virtually Tagged）</h3><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210425113018792.png" alt="image-20210425113018792"></p>
+<p>这种模型是 CPU 发送一个虚拟地址进行匹配 cache，如果 cache hit，就返回内容。如果 miss，就把虚拟地址经过 MMU 映射到物理地址，根据物理地址从主存读取数据。但是虚拟地址本身就是物理地址的映射，所以会存在一些问题。</p>
+<h4 id="歧义-ambiguity"><a href="#歧义-ambiguity" class="headerlink" title="歧义(ambiguity)"></a>歧义(ambiguity)</h4><p>歧义是指不同的数据在 cache 中具有相同的 tag 和 index。假如不同的进程有相同的虚拟地址，那么在 cache 中就可能拥有同样的 tag 和 index，因为 cache 就是根据这两个内容判断是否 hit。所以这样就会出现一些问题，即不同进程具有相同虚拟地址，导致一个进程可能会访问到别的进程的数据。</p>
+<p>所以为了解决这个问题，只能在切换进程的时候就 flush cache。但是这样会导致性能损耗。</p>
+<h4 id="别名-alias"><a href="#别名-alias" class="headerlink" title="别名(alias)"></a>别名(alias)</h4><p>别名是指相同的物理地址被映射到不同的虚拟地址。如果一个 cache 中存在一个物理地址的两个虚拟地址映射，如果一个进程修改了其中一个 cache 的内容，但是另一个进程读取了另外一个，显然它读取的是老数据。</p>
+<p>为了解决这个问题，我们需要使用 nocache ，即读取这个内存的时候不采用 cache。或者使用 flush cache。也可以将每次分配的虚拟地址都索引到相同的 cacheline。</p>
+<h3 id="物理高速缓存（PIPT-Physically-Indexed-Physically-Tagged）"><a href="#物理高速缓存（PIPT-Physically-Indexed-Physically-Tagged）" class="headerlink" title="物理高速缓存（PIPT    Physically Indexed Physically Tagged）"></a>物理高速缓存（PIPT    Physically Indexed Physically Tagged）</h3><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210425114100961.png" alt="image-20210425114100961"></p>
+<p>即 tag 和 index 都采用物理地址。这种方法没有上面方法的两种问题，但是效率略低。而且硬件成本较高。</p>
+<h3 id="物理标记的虚拟高速缓存（VIPT-Virtually-Indexed-Physically-Tagged）"><a href="#物理标记的虚拟高速缓存（VIPT-Virtually-Indexed-Physically-Tagged）" class="headerlink" title="物理标记的虚拟高速缓存（VIPT  Virtually Indexed Physically Tagged）"></a>物理标记的虚拟高速缓存（VIPT  Virtually Indexed Physically Tagged）</h3><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210425114247622.png" alt="image-20210425114247622"></p>
+<p>因为使用物理地址作为 tag，所以不存在歧义问题。但是有可能会存在别名问题。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag"># 学习笔记</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/04/19/%E7%B3%BB%E7%BB%9F%E7%BA%A7IO/" rel="prev" title="系统级I/O">
+      <i class="fa fa-chevron-left"></i> 系统级I/O
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B"><span class="nav-number">1.</span> <span class="nav-text">模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%B4%E6%8E%A5%E6%98%A0%E5%B0%84%E7%BC%93%E5%AD%98"><span class="nav-number">2.</span> <span class="nav-text">直接映射缓存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%A4%E8%B7%AF%E7%BB%84%E7%9B%B8%E8%BF%9E%E7%BC%93%E5%AD%98"><span class="nav-number">3.</span> <span class="nav-text">两路组相连缓存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%99%9A%E6%8B%9F%E5%9C%B0%E5%9D%80%E8%BF%98%E6%98%AF%E7%89%A9%E7%90%86%E5%9C%B0%E5%9D%80"><span class="nav-number">4.</span> <span class="nav-text">虚拟地址还是物理地址</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%99%9A%E6%8B%9F%E9%AB%98%E9%80%9F%E7%BC%93%E5%AD%98%EF%BC%88VIVT-Virtually-Indexed-Virtually-Tagged%EF%BC%89"><span class="nav-number">4.1.</span> <span class="nav-text">虚拟高速缓存（VIVT     Virtually Indexed Virtually Tagged）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%AD%A7%E4%B9%89-ambiguity"><span class="nav-number">4.1.1.</span> <span class="nav-text">歧义(ambiguity)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%AB%E5%90%8D-alias"><span class="nav-number">4.1.2.</span> <span class="nav-text">别名(alias)</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%89%A9%E7%90%86%E9%AB%98%E9%80%9F%E7%BC%93%E5%AD%98%EF%BC%88PIPT-Physically-Indexed-Physically-Tagged%EF%BC%89"><span class="nav-number">4.2.</span> <span class="nav-text">物理高速缓存（PIPT    Physically Indexed Physically Tagged）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%89%A9%E7%90%86%E6%A0%87%E8%AE%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E9%AB%98%E9%80%9F%E7%BC%93%E5%AD%98%EF%BC%88VIPT-Virtually-Indexed-Physically-Tagged%EF%BC%89"><span class="nav-number">4.3.</span> <span class="nav-text">物理标记的虚拟高速缓存（VIPT  Virtually Indexed Physically Tagged）</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Bofan Chen"
+      src="/images/logo.jpg">
+  <p class="site-author-name" itemprop="name">Bofan Chen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">51</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Bofan Chen</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
