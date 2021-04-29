@@ -20,23 +20,20 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="DMA的出现，使得I&#x2F;O设备和内存的交互变得更加快捷，但是由于 cache 的原因，DMA 又引入了新的问题。">
+  <meta name="description" content="进程不会总是能够正常执行，所以要搞清楚进程是如何退出的">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Cache 与 DMA一致性">
-<meta property="og:url" content="http://example.com/2021/04/26/Cache%E4%B8%8EDMA%E4%B8%80%E8%87%B4%E6%80%A7/index.html">
+<meta property="og:title" content="线程退出">
+<meta property="og:url" content="http://example.com/2021/04/29/%E8%BF%9B%E7%A8%8B%E9%80%80%E5%87%BA/index.html">
 <meta property="og:site_name" content="程序设计入微">
-<meta property="og:description" content="DMA的出现，使得I&#x2F;O设备和内存的交互变得更加快捷，但是由于 cache 的原因，DMA 又引入了新的问题。">
+<meta property="og:description" content="进程不会总是能够正常执行，所以要搞清楚进程是如何退出的">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210426003035130.png">
-<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210426003956588.png">
-<meta property="article:published_time" content="2021-04-25T16:47:57.904Z">
-<meta property="article:modified_time" content="2021-04-25T16:44:51.000Z">
+<meta property="article:published_time" content="2021-04-29T05:08:10.750Z">
+<meta property="article:modified_time" content="2021-04-29T05:08:11.394Z">
 <meta property="article:author" content="Bofan Chen">
 <meta property="article:tag" content="学习笔记">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210426003035130.png">
 
-<link rel="canonical" href="http://example.com/2021/04/26/Cache%E4%B8%8EDMA%E4%B8%80%E8%87%B4%E6%80%A7/">
+<link rel="canonical" href="http://example.com/2021/04/29/%E8%BF%9B%E7%A8%8B%E9%80%80%E5%87%BA/">
 
 
 <script id="page-configurations">
@@ -49,7 +46,7 @@
   };
 </script>
 
-  <title>Cache 与 DMA一致性 | 程序设计入微</title>
+  <title>线程退出 | 程序设计入微</title>
   
 
 
@@ -169,7 +166,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/04/26/Cache%E4%B8%8EDMA%E4%B8%80%E8%87%B4%E6%80%A7/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/04/29/%E8%BF%9B%E7%A8%8B%E9%80%80%E5%87%BA/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/logo.jpg">
@@ -182,7 +179,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Cache 与 DMA一致性
+          线程退出
         </h1>
 
         <div class="post-meta">
@@ -193,7 +190,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-04-26 00:47:57 / 修改时间：00:44:51" itemprop="dateCreated datePublished" datetime="2021-04-26T00:47:57+08:00">2021-04-26</time>
+              <time title="创建时间：2021-04-29 13:08:10 / 修改时间：13:08:11" itemprop="dateCreated datePublished" datetime="2021-04-29T13:08:10+08:00">2021-04-29</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -205,16 +202,12 @@
                 </span>
                   ，
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E9%AB%98%E9%80%9F%E7%BC%93%E5%AD%98%E4%B8%8E%E4%B8%80%E8%87%B4%E6%80%A7/" itemprop="url" rel="index"><span itemprop="name">高速缓存与一致性</span></a>
-                </span>
-                  ，
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E9%AB%98%E9%80%9F%E7%BC%93%E5%AD%98%E4%B8%8E%E4%B8%80%E8%87%B4%E6%80%A7/DMA/" itemprop="url" rel="index"><span itemprop="name">DMA</span></a>
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E8%BF%9B%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">进程</span></a>
                 </span>
             </span>
 
           
-            <div class="post-description">DMA的出现，使得I/O设备和内存的交互变得更加快捷，但是由于 cache 的原因，DMA 又引入了新的问题。</div>
+            <div class="post-description">进程不会总是能够正常执行，所以要搞清楚进程是如何退出的</div>
 
         </div>
       </header>
@@ -225,23 +218,22 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="DMA"><a href="#DMA" class="headerlink" title="DMA"></a>DMA</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210426003035130.png" alt="image-20210426003035130"></p>
-<p>DMA 通过总线从 memory 获取数据，但是由于 Cache 通常采用写回的原因，memory 内的数据不一定是新的，所以就导致了数据不一致性。</p>
-<p>如何来解决这个问题呢？</p>
-<p>最朴素的想法，让这段 memory nocache，这样的话，memory 的数据就一直是新的，但这样的做法会导致性能降低。</p>
-<p>从软件的角度入手，分为读写两个动作：</p>
+        <h2 id="进程退出的分类"><a href="#进程退出的分类" class="headerlink" title="进程退出的分类"></a>进程退出的分类</h2><p>正常退出：</p>
 <ul>
-<li>如果 DMA 将 I/O 的数据写入 memory 时，在写之前，将这段内存的 Cache invalid，这样程序在 DMA 传输完成之后，不会因为 Cache hit 而读取到存储在 Cache 中过时的数据</li>
-<li>如果 DMA 将 memory 的数据写入 I/O 时，那么在传输前，可以先 clean DMA buffer 地址范围的高速缓存，即让 Cache 内的数据写入到 memory 中去，这样就不会把 memory 内过时的数据写入 I/O 设备。</li>
+<li>main() 函数中的 return</li>
+<li>调用 exit() 函数</li>
+<li>调用 _exit() 函数</li>
 </ul>
-<p>注意的是，DMA 传输期间 CPU 不要访问 DMA Buffer</p>
-<h2 id="DMA-Buffer对齐要求"><a href="#DMA-Buffer对齐要求" class="headerlink" title="DMA Buffer对齐要求"></a>DMA Buffer对齐要求</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> temp = <span class="number">5</span>;</span><br><span class="line"><span class="keyword">char</span> buffer[<span class="number">64</span>] = &#123;<span class="number">0</span>&#125;;</span><br></pre></td></tr></table></figure>
-<p>假设，cacheline大小是64字节。那么temp变量和buffer位于同一个cacheline，buffer横跨两个cacheline。</p>
-<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210426003956588.png" alt="image-20210426003956588"></p>
-<p>由于 buffer 和 temp 在同一个 cacheline 内，假如在DMA传输数据到主存的过程中，temp的值被改变，然后别的程序需要用到这个 cacheline，由于temp被改变，所以这个 cacheline 要写回到主存，这样就覆盖了部分 DMA 刚刚写入到主存的数据。</p>
-<p>所以为了解决这个问题，一般要求 DMA Buffer 首地址必须与 cacheline 对齐，buffer 的大小也要与 cacheline 对齐。</p>
-<p><strong>Linux中，要求DMA Buffer不能是从栈和全局变量分配。</strong>我们可以通过kmalloc分配DMA Buffer。linux提供了一个宏，保证kmalloc分配的object最小的size。例如ARM64平台的定义如下</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> ARCH_DMA_MINALIGN	(128)</span></span><br></pre></td></tr></table></figure>
+<p>异常退出：</p>
+<ul>
+<li>调用 about</li>
+<li>信号终止</li>
+</ul>
+<h2 id="exit-系统调用"><a href="#exit-系统调用" class="headerlink" title="exit 系统调用"></a>exit 系统调用</h2><p>_exit() 函数是直接中止进程，exit() 会刷新缓冲流，然后再中止。</p>
+<p>在 exit 函数中，首先会释放进程的内存、page table，关闭已经打开的文件。如果这个进程还拥有子进程，它就会执行一个函数，把这些子进程的父进程设置为 init 进程(PID = 1)。执行完这些之后，调用 wakeup 函数唤醒当前进程的父进程。然后这个进程的状态被设置为 ZOMBIE。现在这个进程还没有完全释放它的资源，所以还不能被重用。所谓重用，就是期待最后一步，进程的所有状态都可以通过无关的 fork 系统调用复用。</p>
+<p>然后这个进程通过 sched 函数进入调度器线程。<a target="_blank" rel="noopener" href="http://yogacbf.com/2021/04/29/%E8%BF%9B%E7%A8%8B%E5%88%87%E6%8D%A2/">线程切换</a>。这时，这个进程的状态不是 RUNNABLE，所以它不能执行。</p>
+<h2 id="wait-系统调用"><a href="#wait-系统调用" class="headerlink" title="wait 系统调用"></a>wait 系统调用</h2><p>当一个进程 exit 后，会返回到父进程的 wait ，wait 中会扫描进程表单，查找父进程是自己且进程状态时 ZOMBIE 的进程，然后父进程执行 freeproc 函数，完成释放资源的最后几步。所以每个进程都要有父进程，这也是 init 进程成为别的进程的父进程的原因。</p>
+<h2 id="kill-系统调用"><a href="#kill-系统调用" class="headerlink" title="kill 系统调用"></a>kill 系统调用</h2><p>kill 系统调用一般是扫描进程表单，找到目标进程。然后将目标进程 proc 结构体的 killed 标志位设置为1。如果进程是 SLEEPING 状态， kill 系统调用可能将它杀掉或者设置为 RUNNABLE 状态。当目标进程运行到内核代码时，会检查自己的 killed 标志位，如果为1，就调用 exit 系统调用结束自己。</p>
 
     </div>
 
@@ -260,13 +252,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2021/04/25/TLB%E5%8E%9F%E7%90%86/" rel="prev" title="TLB原理">
-      <i class="fa fa-chevron-left"></i> TLB原理
+    <a href="/2021/04/29/%E8%BF%9B%E7%A8%8B%E5%88%87%E6%8D%A2/" rel="prev" title="线程切换">
+      <i class="fa fa-chevron-left"></i> 线程切换
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2021/04/29/%E8%BF%9B%E7%A8%8B%E5%88%87%E6%8D%A2/" rel="next" title="线程切换">
-      线程切换 <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -325,7 +314,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#DMA"><span class="nav-number">1.</span> <span class="nav-text">DMA</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DMA-Buffer%E5%AF%B9%E9%BD%90%E8%A6%81%E6%B1%82"><span class="nav-number">2.</span> <span class="nav-text">DMA Buffer对齐要求</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%9B%E7%A8%8B%E9%80%80%E5%87%BA%E7%9A%84%E5%88%86%E7%B1%BB"><span class="nav-number">1.</span> <span class="nav-text">进程退出的分类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#exit-%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8"><span class="nav-number">2.</span> <span class="nav-text">exit 系统调用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#wait-%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8"><span class="nav-number">3.</span> <span class="nav-text">wait 系统调用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#kill-%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8"><span class="nav-number">4.</span> <span class="nav-text">kill 系统调用</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
