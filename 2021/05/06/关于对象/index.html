@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="曾经的我一直认为对象的内存占用远远大于结构体，对于对象的整体结构不清晰，探索C++的对象模型真的很爽">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++对象">
+<meta property="og:url" content="http://example.com/2021/05/06/%E5%85%B3%E4%BA%8E%E5%AF%B9%E8%B1%A1/index.html">
+<meta property="og:site_name" content="程序设计入微">
+<meta property="og:description" content="曾经的我一直认为对象的内存占用远远大于结构体，对于对象的整体结构不清晰，探索C++的对象模型真的很爽">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210506193918.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210506204833.png">
+<meta property="article:published_time" content="2021-05-06T13:28:24.264Z">
+<meta property="article:modified_time" content="2021-05-06T13:28:24.989Z">
+<meta property="article:author" content="Bofan Chen">
+<meta property="article:tag" content="学习笔记">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210506193918.png">
+
+<link rel="canonical" href="http://example.com/2021/05/06/%E5%85%B3%E4%BA%8E%E5%AF%B9%E8%B1%A1/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>C++对象 | 程序设计入微</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">程序设计入微</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/05/06/%E5%85%B3%E4%BA%8E%E5%AF%B9%E8%B1%A1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/logo.jpg">
+      <meta itemprop="name" content="Bofan Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="程序设计入微">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          C++对象
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-05-06 21:28:24" itemprop="dateCreated datePublished" datetime="2021-05-06T21:28:24+08:00">2021-05-06</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C++</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B/" itemprop="url" rel="index"><span itemprop="name">对象模型</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">曾经的我一直认为对象的内存占用远远大于结构体，对于对象的整体结构不清晰，探索C++的对象模型真的很爽</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="什么是对象"><a href="#什么是对象" class="headerlink" title="什么是对象"></a>什么是对象</h2><p>在C中，没有对象的概念，因为C是面向过程编程的。但是排除掉函数、继承等概念，C中的结构体和C++中的对象有些许相似之处。</p>
+<p>在C中，结构体是一系列数据的集合，通过结构体能够使得我们能够简易的直接操作一些可能相关的数据，但是对象相比结构体又多些什么呢？</p>
+<p>或许首先想到的就是对象里能够附带一些函数，但是事实上，我们可以通过在C结构体中存放函数指针达到类似的效果。</p>
+<p>我觉得对象和结构体最大的区别就是模型和抽象思想的不同。</p>
+<p>结构体本质上还是为了面向过程服务，但是C++为了兼容C不得不带上结构体。如果能够抛弃C，C++也许能够做的更好。</p>
+<p>回归到对象，将数据以对象的模型进行封装之后，资源的消耗增加了多少呢？</p>
+<h2 id="对象模型"><a href="#对象模型" class="headerlink" title="对象模型"></a>对象模型</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210506193918.png" alt="image-20210506193909448"></p>
+<p>在C++对象模型里面，可以看出每个 object 并不大，non-static data members 被配置于每一个 class object 之内，static data members 被存放在个别的 class object 之外。static 和 non-static function members 也被放在个别的 class object 之外。 virtual function 则以 vptr 指针和 virtual table (vtbl) 支持。</p>
+<p>当存在继承之后的对象模型具体怎么实现，会放在后面讨论。</p>
+<h2 id="程序设计范式（programming-paradigms）"><a href="#程序设计范式（programming-paradigms）" class="headerlink" title="程序设计范式（programming paradigms）"></a>程序设计范式（programming paradigms）</h2><p>C++ 支持三种设计范式：</p>
+<h3 id="程序模型（procedural-model）"><a href="#程序模型（procedural-model）" class="headerlink" title="程序模型（procedural model）"></a>程序模型（procedural model）</h3><p>这个模型就像是C一样，我们同样以用C++写出C一样的程序，调用各种写好的函数，处理一些数据。</p>
+<h3 id="抽象数据类型模型（ADT，abstract-data-type-model）"><a href="#抽象数据类型模型（ADT，abstract-data-type-model）" class="headerlink" title="抽象数据类型模型（ADT，abstract data type model）"></a>抽象数据类型模型（ADT，abstract data type model）</h3><p>在这种模型下，所谓的抽象不再仅仅是对象，而是和一组表达式（public 接口）一起提供的。</p>
+<h3 id="面向对象模型（object-oriented-model，OO）"><a href="#面向对象模型（object-oriented-model，OO）" class="headerlink" title="面向对象模型（object-oriented model，OO）"></a>面向对象模型（object-oriented model，OO）</h3><p>此模型中，有一些彼此相关的类型，通过一个抽象的 base class（用以提供共同的接口）被封装起来。</p>
+<p>有关于什么是面向对象模型，知乎大佬说的很好：<a target="_blank" rel="noopener" href="https://www.zhihu.com/question/305042684/answer/550196442"> 怎么从本质上理解面向对象的编程思想？</a></p>
+<h2 id="对象是如何存储的"><a href="#对象是如何存储的" class="headerlink" title="对象是如何存储的"></a>对象是如何存储的</h2><p>对象的存储和结构体的存储是类似的，一个对象的存储由以下几个部分组成：</p>
+<ul>
+<li>所有的 non-static data members 所占用的空间</li>
+<li>由于 alignment 的需求而填补上去的空间，可能存在于 members 之间，也可能存在于集合体的边界</li>
+<li>为了支持 virtual 而由内部产生的任何额外负担</li>
+</ul>
+<p>众所周知，C/C++中，任何指针所占用的内存大小都是固定的，那么如果是对象指针呢？又会发生什么？</p>
+<p><em>买点零食去</em></p>
+<p>如果是对象指针，那么OS为什么知道指针指向的地址之后的内存是怎么分布的呢？这里，其实是编译器做的工作，编译器会根据指针的类型，来指明指针指向的内存后面的内存分布。</p>
+<p>考虑到对象指针之后，容易想到的一个内容就是多态。例如：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ZooAnimal</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	ZooAnimal();</span><br><span class="line">	<span class="keyword">virtual</span> ~ZooAnimal();</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">	<span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">rotate</span><span class="params">()</span></span>;</span><br><span class="line"><span class="keyword">protected</span>:</span><br><span class="line">	<span class="keyword">int</span> loc;</span><br><span class="line">	String name;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Bear</span> :</span> <span class="keyword">public</span> ZooAnimal &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	Bear();</span><br><span class="line">	~Bear();</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">rotate</span><span class="params">()</span></span>;</span><br><span class="line">	<span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">dance</span><span class="params">()</span></span>;</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line"><span class="keyword">protected</span>:</span><br><span class="line">	<span class="class"><span class="keyword">enum</span> <span class="title">Dacne</span> &#123;</span>...&#125;;</span><br><span class="line">	Dances dances_known;</span><br><span class="line">	<span class="keyword">int</span> cell_block;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>如果是：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">Bear <span class="title">b</span><span class="params">(<span class="string">&quot;yogi&quot;</span>)</span></span>;</span><br><span class="line">Bear *pb = &amp;b;</span><br><span class="line">Bear &amp;rb = *pb;</span><br></pre></td></tr></table></figure>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210506204833.png" alt="image-20210506204832626"></p>
+<p>如果是：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Bear b;</span><br><span class="line">ZooAnimal *pz = &amp;b;</span><br><span class="line">Bear *pb = &amp;b;</span><br></pre></td></tr></table></figure>
+<p>显然，如果要访问pz的内容，那么只能访问 ZooAnimal 的数据，但是如果要访问 virtual function，那么就会有些不同，即 pz-&gt;rorate() 会访问 b 的 virtual function。</p>
+<p>具体来说，pz 的类型将在编译时期决定以下两点：</p>
+<ul>
+<li>固定的可用接口。也就是说，pz 只能调用 ZooAnimal 的public 接口</li>
+<li>该接口的 access level （例如 rorate() 是 ZooAnimal 的一个 public member）</li>
+</ul>
+<p>这里需要记住的是，C++ 通过 pointers 和 references 来支持多态，如果是 ZooAnimal pz = b; 那么 pz.rorate() 调用的就是 ZooAnimal 的 rorate，即不存在多态。有一个似是而非的概念：OO程序设计并不支持对 object 的直接处理。</p>
+<p>一个 pointer 或者 reference 之所以支持多态，是因为他们并不引发内存中任何“与类型有关的内存委托操作（type-dependent commitment）”；会受到改变的，只有它们指向的内存的“大小和内容解释方式”而已。所以如果使用 derived class 初始化 base class，那么多余的部分将会被切除，vptr 也会指向 base class 应有的部分，也就没有了多态。</p>
+<p><em>这里的多态指的是运行时多态，即通过虚函数表实现的多态</em></p>
+<p><strong>reference</strong></p>
+<ul>
+<li>深入探索C++对象模型</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag"># 学习笔记</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/04/29/%E8%BF%9B%E7%A8%8B%E9%80%80%E5%87%BA/" rel="prev" title="线程退出">
+      <i class="fa fa-chevron-left"></i> 线程退出
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E5%AF%B9%E8%B1%A1"><span class="nav-number">1.</span> <span class="nav-text">什么是对象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B"><span class="nav-number">2.</span> <span class="nav-text">对象模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1%E8%8C%83%E5%BC%8F%EF%BC%88programming-paradigms%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">程序设计范式（programming paradigms）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A8%8B%E5%BA%8F%E6%A8%A1%E5%9E%8B%EF%BC%88procedural-model%EF%BC%89"><span class="nav-number">3.1.</span> <span class="nav-text">程序模型（procedural model）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8A%BD%E8%B1%A1%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E6%A8%A1%E5%9E%8B%EF%BC%88ADT%EF%BC%8Cabstract-data-type-model%EF%BC%89"><span class="nav-number">3.2.</span> <span class="nav-text">抽象数据类型模型（ADT，abstract data type model）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B%EF%BC%88object-oriented-model%EF%BC%8COO%EF%BC%89"><span class="nav-number">3.3.</span> <span class="nav-text">面向对象模型（object-oriented model，OO）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%B9%E8%B1%A1%E6%98%AF%E5%A6%82%E4%BD%95%E5%AD%98%E5%82%A8%E7%9A%84"><span class="nav-number">4.</span> <span class="nav-text">对象是如何存储的</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Bofan Chen"
+      src="/images/logo.jpg">
+  <p class="site-author-name" itemprop="name">Bofan Chen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">53</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">55</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Bofan Chen</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
