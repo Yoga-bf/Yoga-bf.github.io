@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="构造函数是为了能够初始化一个对象的 data member，以防止未初始化的数据产生莫名其妙的错误">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++构造函数语义学">
+<meta property="og:url" content="http://example.com/2021/05/07/%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0%E8%AF%AD%E4%B9%89%E5%AD%A6/index.html">
+<meta property="og:site_name" content="程序设计入微">
+<meta property="og:description" content="构造函数是为了能够初始化一个对象的 data member，以防止未初始化的数据产生莫名其妙的错误">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-05-07T10:43:55.660Z">
+<meta property="article:modified_time" content="2021-05-07T09:09:08.000Z">
+<meta property="article:author" content="Bofan Chen">
+<meta property="article:tag" content="学习笔记">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2021/05/07/%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0%E8%AF%AD%E4%B9%89%E5%AD%A6/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>C++构造函数语义学 | 程序设计入微</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">程序设计入微</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/05/07/%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0%E8%AF%AD%E4%B9%89%E5%AD%A6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/logo.jpg">
+      <meta itemprop="name" content="Bofan Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="程序设计入微">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          C++构造函数语义学
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-05-07 18:43:55 / 修改时间：17:09:08" itemprop="dateCreated datePublished" datetime="2021-05-07T18:43:55+08:00">2021-05-07</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C++</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0/" itemprop="url" rel="index"><span itemprop="name">构造函数</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">构造函数是为了能够初始化一个对象的 data member，以防止未初始化的数据产生莫名其妙的错误</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在刚刚接触C++的时候，总是听说如果没有写构造函数，编译器会帮我生成一个构造函数，同样的，复制构造函数他们也说能自动生成。可是是这样的吗？生成的构造函数完成了哪些工作？</p>
+<h2 id="构造函数"><a href="#构造函数" class="headerlink" title="构造函数"></a>构造函数</h2><p>默认构造函数的一个显然易见的作用就是让我们以特定的方式初始化我们的 data member，例如一个<code>class a(2)</code>。那么如果我们没有编写构造函数，我们希望编译器能给我们生成一个构造函数，能够初始化我们class内的data。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">T</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="comment">//这里应该有构造函数，但是我们没有编写</span></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">	<span class="keyword">int</span> a;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p> 老实说，我也不知道。我在不同的平台用不同的g++版本测试，结果是不同的。这可能就是大家说的“C++编译器在背后做了太多事”吧。</p>
+<p>尽量来分析其中过程</p>
+<p>首先分析合成默认构造函数，在以前的学习中，认为类如果不存在默认构造函数，那么就会自动生成一个。但是C++ Annotated Reference Manual（ARM）中的 Section 12.1 说：default constructors…在需要的时候被编译器产生出来。这个需要的时候，指的是编译器的需要。事实上，一个 nontrivial default constructor 在ARM的术语中就是编译器所需要的那种，必要的话会由编译器合成出来。下面分析四种情况</p>
+<h3 id="带有-Default-Constructor-的-Member-Class-Object"><a href="#带有-Default-Constructor-的-Member-Class-Object" class="headerlink" title="带有 Default Constructor 的 Member Class Object"></a>带有 Default Constructor 的 Member Class Object</h3><p>如果一个Class没有任何constructor，但是它内含一个 member class object，且后者有 default constructor，那么编译器就需要给这个 class 生成 default constructor，不过这个合成操作只有在 constructor 真正需要被调用的时候才会发生。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Foo</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	Foo();</span><br><span class="line">	Foo(<span class="keyword">int</span>);</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Bar</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	Foo foo;</span><br><span class="line">	<span class="keyword">char</span> *str;</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">foo_bar</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	Bar bar;</span><br><span class="line">	<span class="comment">//这里会生成一个 Bar 的 default constructor，里面包含 Foo 的 default constructor，但是不会初始化 Bar 的 str。</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>事实上，如果 Bar 有默认构造函数，且只初始化了 str，那么编译器会自动扩充 Bar 的默认构造函数，完成 Foo foo 的初始化，如果有多个member class object，那么就会以 member 声明的顺序调用每个 member 关联的 default constructors，这些代码被安插在 explicit user code 之前</p>
+<h3 id="带有-Default-Constructor-的-Base-class"><a href="#带有-Default-Constructor-的-Base-class" class="headerlink" title="带有 Default Constructor 的 Base class"></a>带有 Default Constructor 的 Base class</h3><p>同样的，如果 derived class 中没有默认构造函数，编译器同样会生成一个默认构造函数，将调用上一层 base classes 的默认构造函数（根据声明的顺序）。</p>
+<p>按照书中的说法，如果 derived class 中有别的构造函数而不存在默认构造函数，它说的做法我没看懂，我去测试了一下，然后就直接报错了。。。所以我觉的这个不是问题，( •̀ ω •́ )y</p>
+<h3 id="带有一个-virtual-Function-的class"><a href="#带有一个-virtual-Function-的class" class="headerlink" title="带有一个 virtual Function 的class"></a>带有一个 virtual Function 的class</h3><ul>
+<li>class 声明（或继承）一个 virtual function</li>
+<li>class 派生自一个继承串链，其中有一个或更多的 virtual base classes</li>
+</ul>
+<p>第二点和第四种情况是一个，但是放在后面讨论。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Widget</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">flip</span><span class="params">()</span> </span>= <span class="number">0</span>;</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">flip</span><span class="params">(<span class="keyword">const</span> Widget&amp; widget)</span> </span>&#123;widget.flip();&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//假设 Bell 和 Whistle 都派生自 Widget</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">foo</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	Bell b;</span><br><span class="line">	Whistle w;</span><br><span class="line">	flip(b);</span><br><span class="line">	flip(w);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>   编译器会生成一个默认构造函数完成两个扩张活动：</p>
+<ul>
+<li>一个 virtual function table（vtbl）会被编译器产生出来，内放 class 的virtual function 地址。</li>
+<li>在每一个 class object 中，一个额外的 pointer member（vptr) 会被编译器合成出来，内含 class vtbl 的地址。</li>
+</ul>
+<h3 id="带有一个-Virtual-Base-Class-的-Class"><a href="#带有一个-Virtual-Base-Class-的-Class" class="headerlink" title="带有一个 Virtual Base Class 的 Class"></a>带有一个 Virtual Base Class 的 Class</h3><p>需要必须使 virtual base class 在其每一个 derived class object 中的位置，能够于执行期准备妥当。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>能够合成 default constructor 是借着 member object 或 base class 的 default constructor，或者为每一个 object 初始化其 virtual function 机制或 virtual base class 机制而完成的。在合成的 default constructor 中，只有 base class subobjects 和 member class objects 会被初始化。</p>
+<h2 id="Copy-Constructor-的构造操作"><a href="#Copy-Constructor-的构造操作" class="headerlink" title="Copy Constructor 的构造操作"></a>Copy Constructor 的构造操作</h2><p><em>虽然现在有移动构造，但是复制构造也挺重要</em></p>
+<p>有三种情况，会以一个 object 的内容作为另外一个 class object 的初始值。</p>
+<ol>
+<li><p><code>class X &#123;...&#125;</code>  <code>X xx = x;</code> 这样显式以一个 object 的内容作为另一个 class object 的初值</p>
+</li>
+<li><p>当 object 被当作参数交给某个函数时：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">extern</span> <span class="keyword">void</span> <span class="title">foo</span><span class="params">(X x)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">bar</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	X xx;</span><br><span class="line">	<span class="comment">//以 xx 作为 foo() 第一个参数的初值（隐式的初始化操作）</span></span><br><span class="line">	foo(xx);</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li><p>一个函数返回一个 class object 时，例如：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">X <span class="title">foo_bar</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	X xx;</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">	<span class="keyword">return</span> xx;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果提供了 explicit copy constructor，显然它会被调用，如果没有提供，会发生什么。</p>
+</li>
+</ol>
+<h2 id="Default-Memberwise-Initialization"><a href="#Default-Memberwise-Initialization" class="headerlink" title="Default Memberwise Initialization"></a>Default Memberwise Initialization</h2><p>当 class object 以相同 class 的另一个 object 作为初值，其内部是以所谓的 default memberwise initialization 手法完成的，也就是把每一个内建的或派生的 data member （例如一个指针或者数组）的值，从某个 object 拷贝一份到另一个 object 身上。（这里可以看出，如果指针或者数组只拷贝值的话，是浅拷贝，即它们指向同一块内存）。不过它并不会拷贝其中的 member class object，而是以递归的方式施行 memberwise initialization。</p>
+<p>在C++中，如果一个类没有 explicit copy constructor，那么就会给这个类生成一个 implicitly copy constructor。同样的 C++ 标准把一个 copy constructor 分为 trivial 和 nontrivial 两种，只有 nontrivial 的 copy constructor 才会被合成到程序中，决定一个 copy constructor 是不是 trivial 的的标准在于 class 是否表现出 bitwise copy semantics。</p>
+<h2 id="bitwise-copy-semantics-（位逐次拷贝）"><a href="#bitwise-copy-semantics-（位逐次拷贝）" class="headerlink" title="bitwise copy semantics （位逐次拷贝）"></a>bitwise copy semantics （位逐次拷贝）</h2><p>首先翻译一下什么是位逐次拷贝，按照我的理解，就是内建的或派生的 data member 按照位逐次拷贝，考虑到指针和数据，可以想到这是种浅拷贝。所以，只有不表现出浅拷贝的 class ，才会将生成的 implicitly copy constructor 合成到程序里。那么什么时候一个 class 不展现出 bitwise copy semantics 呢？有以下四种：</p>
+<ul>
+<li>有 class member object，并且这个成员有自己的 copy constructor（这个 copy constructor 无论是设计者显示声明或者编译器自动生成的都算）。</li>
+<li>base class 有自己的 copy constructor（无论是显示声明还是自动生成）</li>
+<li>当 class 声明一个或者多个 virtual functions</li>
+<li>class 继承链中有一个或者多个 virtual base class</li>
+</ul>
+<p>1、2两点都是很显然的把它们的 copy constructor 插入到合成的 copy constructor 中。对于后面两点分别讨论</p>
+<h3 id="virtual-functions-之-virtual-table"><a href="#virtual-functions-之-virtual-table" class="headerlink" title="virtual  functions 之 virtual table"></a>virtual  functions 之 virtual table</h3><p>众所周知，在初始化阶段，我们要初始化一个类的 vptr，让它指向应该指向的 vtbl。这两个东西都是由编译器扩展生成的。</p>
+<p>所以在类相同的两个类进行复制的时候，vptr 按照 bitwise copy semantics 是没问题的，因为这两个类对象可以指向同一个 vtbl，但是如果是使用 derived class 来 copy 初始化 base class，那就不能这样做了</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ZooAnimal</span>&#123;</span></span><br><span class="line"><span class="comment">//...</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Bear</span> :</span> <span class="keyword">public</span> ZooAnimal&#123;</span><br><span class="line"><span class="comment">//...</span></span><br><span class="line">&#125;;</span><br><span class="line">Bear b;</span><br><span class="line">ZooAnimal a = b;</span><br></pre></td></tr></table></figure>
+<p>这时候就不能简单的浅拷贝了。所以我们需要合成 copy constructor，来让 a 的 vptr 指向它应该指向的 vtbl。</p>
+<h3 id="virtual-base-class-subobject"><a href="#virtual-base-class-subobject" class="headerlink" title="virtual base class subobject"></a>virtual base class subobject</h3><p>同样的，假如一个类具有 virtual base class，那么 copy constructor 就变得有趣</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ZooAnimal</span>&#123;</span></span><br><span class="line"><span class="comment">//...</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Raccon</span> :</span> <span class="keyword">public</span> <span class="keyword">virtual</span> ZooAnimal &#123;</span><br><span class="line"><span class="comment">//...</span></span><br><span class="line">	Raccon();</span><br><span class="line">	Raccon(<span class="keyword">int</span> val);</span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">RedPanda</span> :</span> <span class="keyword">public</span> Raccon &#123;</span><br><span class="line"><span class="comment">//...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>在 Raccon 调用默认构造函数时，编译器会在构造函数中插入：将 Raccon 的 vptr 初始化，并定位出 Raccon 中的 ZooAnimal subobject。这两部会成为构造函数的先头部队。</p>
+<p>如果 <code> Raccon a;</code> <code>Raccon b = a;</code> 那么使用浅拷贝完全没有问题，但是如果使用 RedPanda 初始化 Raccon，如果使用浅拷贝就会出现问题。即 <code>RedPanda a;</code> <code>Raccon b = a;</code> </p>
+<p>为了完成正确的初值设定，编译器必须合成一个 copy constructor，安插一些代码以设定 virtual base class pointer/offset 的初值，对每一个 members 执行必要的 memberwise 初始化操作以及执行其它的内存相关操作，这个放在后面讨论。太累了~</p>
+<p><strong>reference</strong></p>
+<ul>
+<li>深入探索C++对象模型</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag"># 学习笔记</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/05/06/%E5%85%B3%E4%BA%8E%E5%AF%B9%E8%B1%A1/" rel="prev" title="C++对象">
+      <i class="fa fa-chevron-left"></i> C++对象
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0"><span class="nav-number">1.</span> <span class="nav-text">构造函数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%A6%E6%9C%89-Default-Constructor-%E7%9A%84-Member-Class-Object"><span class="nav-number">1.1.</span> <span class="nav-text">带有 Default Constructor 的 Member Class Object</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%A6%E6%9C%89-Default-Constructor-%E7%9A%84-Base-class"><span class="nav-number">1.2.</span> <span class="nav-text">带有 Default Constructor 的 Base class</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%A6%E6%9C%89%E4%B8%80%E4%B8%AA-virtual-Function-%E7%9A%84class"><span class="nav-number">1.3.</span> <span class="nav-text">带有一个 virtual Function 的class</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%A6%E6%9C%89%E4%B8%80%E4%B8%AA-Virtual-Base-Class-%E7%9A%84-Class"><span class="nav-number">1.4.</span> <span class="nav-text">带有一个 Virtual Base Class 的 Class</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">1.5.</span> <span class="nav-text">总结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Copy-Constructor-%E7%9A%84%E6%9E%84%E9%80%A0%E6%93%8D%E4%BD%9C"><span class="nav-number">2.</span> <span class="nav-text">Copy Constructor 的构造操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Default-Memberwise-Initialization"><span class="nav-number">3.</span> <span class="nav-text">Default Memberwise Initialization</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#bitwise-copy-semantics-%EF%BC%88%E4%BD%8D%E9%80%90%E6%AC%A1%E6%8B%B7%E8%B4%9D%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">bitwise copy semantics （位逐次拷贝）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#virtual-functions-%E4%B9%8B-virtual-table"><span class="nav-number">4.1.</span> <span class="nav-text">virtual  functions 之 virtual table</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#virtual-base-class-subobject"><span class="nav-number">4.2.</span> <span class="nav-text">virtual base class subobject</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Bofan Chen"
+      src="/images/logo.jpg">
+  <p class="site-author-name" itemprop="name">Bofan Chen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">56</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Bofan Chen</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
