@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="C++类的DATA按照什么内存模型进行存储，如果有继承的时候，DATA模型又会是什么样的，C++类的DATA能够像普通的内存一样通过指针访问吗？如果可以，效率如何？">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++类的DATA语义学">
+<meta property="og:url" content="http://example.com/2021/05/08/DATA%E8%AF%AD%E4%B9%89%E5%AD%A6/index.html">
+<meta property="og:site_name" content="程序设计入微">
+<meta property="og:description" content="C++类的DATA按照什么内存模型进行存储，如果有继承的时候，DATA模型又会是什么样的，C++类的DATA能够像普通的内存一样通过指针访问吗？如果可以，效率如何？">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210508143706.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210508171936.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210508183113.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210508195836.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210508195942.png">
+<meta property="article:published_time" content="2021-05-08T13:17:46.053Z">
+<meta property="article:modified_time" content="2021-05-08T12:07:23.000Z">
+<meta property="article:author" content="Bofan Chen">
+<meta property="article:tag" content="学习笔记">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210508143706.png">
+
+<link rel="canonical" href="http://example.com/2021/05/08/DATA%E8%AF%AD%E4%B9%89%E5%AD%A6/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>C++类的DATA语义学 | 程序设计入微</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">程序设计入微</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/05/08/DATA%E8%AF%AD%E4%B9%89%E5%AD%A6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/logo.jpg">
+      <meta itemprop="name" content="Bofan Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="程序设计入微">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          C++类的DATA语义学
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-05-08 21:17:46 / 修改时间：20:07:23" itemprop="dateCreated datePublished" datetime="2021-05-08T21:17:46+08:00">2021-05-08</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C++</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/%E7%B1%BB/" itemprop="url" rel="index"><span itemprop="name">类</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/%E7%B1%BB/DATA/" itemprop="url" rel="index"><span itemprop="name">DATA</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">C++类的DATA按照什么内存模型进行存储，如果有继承的时候，DATA模型又会是什么样的，C++类的DATA能够像普通的内存一样通过指针访问吗？如果可以，效率如何？</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="Data-Member-Layout-布局"><a href="#Data-Member-Layout-布局" class="headerlink" title="Data Member Layout (布局)"></a>Data Member Layout (布局)</h2><p>如果是一个无继承、无 virtual function 的类，那么它的 Data Member 的分布和C的 struct 相同，虽然可能存在不同的 section，但是一般来说，编译器会将不同的访问权限的内容进行合并，然后按照一定的顺序进行排列。但是如果加上 virtual function 和继承之后，事情将变得不同，特别是加上 virtual base class。</p>
+<h3 id="单一继承下的-class"><a href="#单一继承下的-class" class="headerlink" title="单一继承下的 class"></a>单一继承下的 class</h3><p>如果是单一继承下的 class，如果没有多态，即没有 virtual function，那么内存模型是正常的堆砌，但是有一点需要注意，那就是内存的进行对齐所填补的内容</p>
+<p>以一个实例来解释：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Concrete1</span> &#123;</span></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">	<span class="keyword">int</span> val;</span><br><span class="line">	<span class="keyword">char</span> bit1;</span><br><span class="line"><span class="comment">//...</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Concrete2</span> :</span> <span class="keyword">public</span> Concrete1 &#123;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">	<span class="keyword">char</span> bit2;</span><br><span class="line"><span class="comment">//...</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Concrete3</span> :</span> <span class="keyword">public</span> Concrete2 &#123;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">	<span class="keyword">char</span> bit3;</span><br><span class="line"><span class="comment">//...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>这种模型下，如果不考虑字节的对齐，如果 int 占用 4 字节，那么应该占用 8 字节（考虑一个字节的对齐）</p>
+<p>但是实际上，它占用了 16 字节。</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210508143706.png" alt="image-20210508143704836"></p>
+<p>这是为什么呢？主要还是因为指针，因为我们不知道一个 <code> Concrete1 * A</code> 会指向什么类型的 class。如果一个 base class 的指针指向了 derived class，如果不采用上面的模型，那么就会发什么奇奇怪怪的错误。</p>
+<h3 id="单-class-加上-virtual-function"><a href="#单-class-加上-virtual-function" class="headerlink" title="单 class 加上 virtual function"></a>单 class 加上 virtual function</h3><p>当加上 virtual function 会发生什么呢？众所周知，如果加上 virtual function，那么一般的编译器会产生两个东西，一个是 virtual table(vtbl)，一个是 vptr，vptr 是需要在 Class 模型里面的，因为如果要访问 virtual table，通过类里面的 vptr 就能访问到。</p>
+<p>但是 vptr 要放在哪里？事实上，放在哪里都可以，但是放在不同的地方会带来不同的效率影响。一般来说都会放在 class 的头部或者尾部，分析一下这两个部位分别有什么优点和缺点：</p>
+<p>尾部：</p>
+<p>放在尾部的话，那么 class 的内存模型除了 vptr 外和 C struct 是相同的，所以说，如果这样放，是能够适应以前的 C 代码。但是缺点呢，在多重继承下，不仅从 class object 起始点开始量起的 offset 必须在执行期备妥，甚至与 class vptr 之间的 offset 也必须备妥。（这里需要引入多重继承下，尾端 vptr 的 class 内存模型，但是这种模型现在使用的不多，这里仅仅作为一个介绍了。</p>
+<p>头部：</p>
+<p>在多重继承下，通过指向 class members 的指针调用 virtual function，但是缺点就是丧失了 C 的兼容性。</p>
+<h3 id="加上多态"><a href="#加上多态" class="headerlink" title="加上多态"></a>加上多态</h3><p>当存在继承而且还存在 virtual function 的时候，事情就更加有趣了。数据应该怎么存放呢？唔。。特别是假如有人使用 base class 的指针指向 derived class 或者用 derived class 初始化 base class，模型需要保证不会出问题。</p>
+<p>每一个类都有一个 vptr 指针。在深入探索C++对象模型书里，它的模型是 vptr 放在尾部，但是我是用 g++ 测试之后，vptr 是在头部的，而且不论继承多少次，一个 class object 里面只有一个放在头部的 vptr。个人感觉，放在头部的 vptr 更为合理，但是有一个问题，如果一个 base class 以一个 derived class 进行初始化操作，那么编译器需要对 base class 的 vptr 进行处理，以指向正确的 vtbl。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">base</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">int</span> a;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    base()</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">this</span>-&gt;a = <span class="number">2</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    ~base()</span><br><span class="line">    &#123;&#125;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">pa</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="keyword">this</span>-&gt;a &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">tt</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;hhh&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">derived</span> :</span> <span class="keyword">public</span> base &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">int</span> c;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    derived()</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">this</span>-&gt;c = <span class="number">8</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    ~derived()</span><br><span class="line">    &#123;&#125;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">pb</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="keyword">this</span>-&gt;c &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">tt</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;now&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">te</span> :</span> <span class="keyword">public</span> derived &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">int</span> d;</span><br><span class="line">    ~te()&#123;&#125;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">pd</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="keyword">this</span>-&gt;d &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">tt</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;no&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    base t;</span><br><span class="line">    derived m;</span><br><span class="line">    base *qq;</span><br><span class="line">    te tt;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">int</span> base::*b = &amp;base::a;</span><br><span class="line">    <span class="keyword">int</span> derived::*c = &amp;derived::c;</span><br><span class="line">    <span class="keyword">int</span> te::*d = &amp;te::d;</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%p\n&quot;</span>, b);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%p\n&quot;</span>, c);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%p\n&quot;</span>, d);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210508171936.png" alt="image-20210508171935549"></p>
+<p>当去除 derived 的 virtual 时，也是一样的，所以可以看出继承链的 class 都只有一个 vptr。</p>
+<h3 id="多重继承"><a href="#多重继承" class="headerlink" title="多重继承"></a>多重继承</h3><p>如果是多重继承，如果按照书中的说法，每个有 virtual 的 base class 都会有一个 vptr，最终的 class 会有多个 vptr，但是实际如何呢？且试试：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">base</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">int</span> a;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    base()</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">this</span>-&gt;a = <span class="number">2</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    ~base()</span><br><span class="line">    &#123;&#125;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">pa</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="keyword">this</span>-&gt;a &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">tt</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;hhh&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">derived</span> :</span> <span class="keyword">public</span> base &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">int</span> c;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    derived()</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">this</span>-&gt;c = <span class="number">8</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    ~derived()</span><br><span class="line">    &#123;&#125;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">pb</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="keyword">this</span>-&gt;c &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">tt</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;now&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ttt</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">int</span> k;</span><br><span class="line">    ~ttt()&#123;&#125;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">tttt</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;fs&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">te</span> :</span> <span class="keyword">public</span> derived, <span class="keyword">public</span> ttt &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">int</span> d;</span><br><span class="line">    ~te()&#123;&#125;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">pd</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="keyword">this</span>-&gt;d &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">tt</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;no&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> te::*ta = &amp;te::a;</span><br><span class="line">    <span class="keyword">int</span> te::*tc = &amp;te::c;</span><br><span class="line">    <span class="keyword">int</span> te::*tk = &amp;te::k;</span><br><span class="line">    <span class="keyword">int</span> te::*td = &amp;te::d;</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%p\n&quot;</span>, ta);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%p\n&quot;</span>, tc);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%p\n&quot;</span>, tk);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%p\n&quot;</span>, td);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>事情又变得有趣了起来， te class 里面竟然有两个 vptr ！</p>
+<p>为什么会这样呢？为什么和单一继承不同呢，经过多次测试，一个猜测是每个继承链都会有一个 vptr（编译器真是太厉害了orz…）。如下图所示：</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210508183113.png" alt="image-20210508183110767"></p>
+<p>这只是自己的小测试，也许还有别的可能。</p>
+<h3 id="虚拟继承"><a href="#虚拟继承" class="headerlink" title="虚拟继承"></a>虚拟继承</h3><p>当谈到虚拟继承的时候，我甚至想不到内存模型应该是怎么样子的，因为要同时兼具低内存占用和高访问速度，这个好像挺难实现的，暂且看看书中是怎么描述的吧。</p>
+<p>如果是一个 derived class 虚拟继承了一个 base class，那么这个 derived class 里面会有一个指针指向 base class。</p>
+<p>一个很好的想法，可是应该是有一些问题，例如：</p>
+<ul>
+<li>每一个对象必须针对其每一个 virtual base class 背负一个额外的指针。</li>
+<li>由于虚拟继承串链的加长，导致间接存取层次的增加。例如我们有三层虚拟派生，我们就需要三次间接存取。</li>
+</ul>
+<p>事实是这样吗，且让我们做个测试：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">base</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">int</span> a;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">tt</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;hhh&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">derived</span> :</span> <span class="keyword">virtual</span> <span class="keyword">public</span> base &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">int</span> c;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">tt</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;now&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ttt</span>:</span> <span class="keyword">virtual</span> <span class="keyword">public</span> base&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">int</span> k;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">tttt</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;fs&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">may</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">int</span> m;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">mm</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;dsda&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">te</span> :</span> <span class="keyword">public</span> derived, <span class="keyword">public</span> ttt&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">int</span> d;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">tt</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;no&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    te tests;</span><br><span class="line">    <span class="keyword">int</span>* p = (<span class="keyword">int</span>*)&amp;tests.a;</span><br><span class="line">    <span class="keyword">int</span>* q = (<span class="keyword">int</span>*)&amp;tests.c;</span><br><span class="line">    <span class="keyword">int</span>* qq = (<span class="keyword">int</span>*)&amp;tests.k;</span><br><span class="line">    <span class="keyword">int</span>* qqq = (<span class="keyword">int</span>*)&amp;tests.d;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%p\n&quot;</span>, p);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%p\n&quot;</span>, q);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%p\n&quot;</span>, qq);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%p\n&quot;</span>, qqq);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在测试的时候我并没有发现存在指向 virtual base class 的指针。。。</p>
+<p>那应该就是第二种模型了，即把 virtual base class offsets 放入 vptr 指向的 vtbl 里。可是有两个虚基类怎么办？暂时还没有想到怎么测试 vtbl 的内容，也许能通过指针跟踪，但是最近项目太多了，就探索到这里吧 (<em>^_^</em>)。</p>
+<p>这里有一个小技巧，如果是 virtual base class，那么它最好不带 data member，因为访问它的速度会比较慢。事实上，继承而来的 data member 是直接存放在 class object 里面的，虚拟继承所带来的主要冲击是，它会妨碍优化的有效性，因为每一层虚拟继承都会导入一个额外层次的间接性。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//Point::x</span></span><br><span class="line">&amp;pB-&gt;_vbcPoint + (bx - <span class="number">1</span>);</span><br><span class="line">而不是</span><br><span class="line">&amp;pB + (bx - <span class="number">1</span>);</span><br></pre></td></tr></table></figure>
+<p>引入虚拟指针总会带来代价的，但是我在测试的时候，感觉应该没有这个代价了。。。</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210508195836.png" alt="1"></p>
+<p>​                                                                                                模型一：存在一个指针指向 virtual base class</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210508195942.png" alt="image-20210508195941710"></p>
+<p>​                                                                                                模型而：指向 virtual base class 的指针在 vtbl 里面</p>
+<p><strong>reference</strong></p>
+<p>深入探索 C++ 对象模型</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag"># 学习笔记</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/05/07/%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0%E8%AF%AD%E4%B9%89%E5%AD%A6/" rel="prev" title="C++构造函数语义学">
+      <i class="fa fa-chevron-left"></i> C++构造函数语义学
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Data-Member-Layout-%E5%B8%83%E5%B1%80"><span class="nav-number">1.</span> <span class="nav-text">Data Member Layout (布局)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8D%95%E4%B8%80%E7%BB%A7%E6%89%BF%E4%B8%8B%E7%9A%84-class"><span class="nav-number">1.1.</span> <span class="nav-text">单一继承下的 class</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8D%95-class-%E5%8A%A0%E4%B8%8A-virtual-function"><span class="nav-number">1.2.</span> <span class="nav-text">单 class 加上 virtual function</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8A%A0%E4%B8%8A%E5%A4%9A%E6%80%81"><span class="nav-number">1.3.</span> <span class="nav-text">加上多态</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%9A%E9%87%8D%E7%BB%A7%E6%89%BF"><span class="nav-number">1.4.</span> <span class="nav-text">多重继承</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%99%9A%E6%8B%9F%E7%BB%A7%E6%89%BF"><span class="nav-number">1.5.</span> <span class="nav-text">虚拟继承</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Bofan Chen"
+      src="/images/logo.jpg">
+  <p class="site-author-name" itemprop="name">Bofan Chen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">55</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">58</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Bofan Chen</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
