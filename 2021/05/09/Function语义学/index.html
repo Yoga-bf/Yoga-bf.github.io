@@ -29,8 +29,10 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210509193600.png">
 <meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210509205020.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210510152437038.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210510152459505.png">
 <meta property="article:published_time" content="2021-05-09T13:06:09.088Z">
-<meta property="article:modified_time" content="2021-05-09T12:52:04.338Z">
+<meta property="article:modified_time" content="2021-05-10T08:03:33.000Z">
 <meta property="article:author" content="Bofan Chen">
 <meta property="article:tag" content="学习笔记">
 <meta name="twitter:card" content="summary">
@@ -191,10 +193,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2021-05-09 21:06:09 / 修改时间：20:52:04" itemprop="dateCreated datePublished" datetime="2021-05-09T21:06:09+08:00">2021-05-09</time>
+              <time title="创建时间：2021-05-09 21:06:09" itemprop="dateCreated datePublished" datetime="2021-05-09T21:06:09+08:00">2021-05-09</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-05-10 16:03:33" itemprop="dateModified" datetime="2021-05-10T16:03:33+08:00">2021-05-10</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -266,8 +274,50 @@
 <p>在我上一节的测试中，我尝试了多重继承下的内存模型，和书中介绍的模型类似，只不过现在编译器一般把 vptr 放在头部，在尝试更改第一个 vptr 与第二个 vptr 的值之后，我发现通过指针调用的 virtual function 还是 derived class 的。不知道是啥原因，编译器做什么了吗？</p>
 <p>内存模型如下：</p>
 <p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210509205020.png" alt="image-20210509205011941"></p>
-<p>如果要通过一个 base class pointer 或 reference 访问 derived class 的 virtual function，那么可能需要进行一些处理来让运行时清除调用哪个函数。</p>
-<p>正如上面说的，一个 derived class 内有可能有多个 virtual tables，一个可能的模型是：</p>
+<p>如果要通过一个 base class pointer 或 reference 访问 derived class 的 virtual function，那么可能需要进行一些处理来让运行时清楚调用哪个函数。</p>
+<p>在这里，可以看到 derived class 的 vptr 和第一个 base class 的 vptr 是同一个。</p>
+<p>有三种情况，第二或后继的 base class 会影响对 virtual functions 的支持</p>
+<ol>
+<li><p>通过一个“指向第二个 base class” 的指针，调用 derived class virtual function。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Base2 *ptr = <span class="keyword">new</span> Derived;</span><br><span class="line"><span class="comment">//调用 Derived::~Derived()</span></span><br><span class="line"><span class="comment">//ptr 必须被向后调整 sizeof(Base1)个 bytes</span></span><br><span class="line"><span class="keyword">delete</span> ptr;</span><br></pre></td></tr></table></figure>
+<p>ptr 指向 Derived 对象的 Base2 subobject，为了能够正确执行，ptr 必须调整指向 Derived 对象的起始处。</p>
+</li>
+<li><p>通过一个 “指向 derived class” 的指针，调用第二个 base class 中一个继承而来的 virtual function。在这种情况下，derived class 指针必须再次调整，以指向第二个 base subonject。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Derived *ptr = <span class="keyword">new</span> Derived;</span><br><span class="line"><span class="comment">//调用 Base2::mumble()</span></span><br><span class="line"><span class="comment">//ptr 必须向前调整 sizeof(Base1)个 bytes</span></span><br><span class="line">ptr-&gt;mumble();</span><br></pre></td></tr></table></figure></li>
+<li><p>第三种情况是因为语言性质的扩充：允许一个 virtual function 的返回值类型有所变化，可能是 base type，也可能是 publicly derived type。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Base2 *pb1 = <span class="keyword">new</span> Derived;</span><br><span class="line"><span class="comment">//调用 Derived* Derived::clone()</span></span><br><span class="line"><span class="comment">//返回值必须被调整，以指向 Base2 subobject</span></span><br><span class="line">Base2 *pb2 = pb1-&gt;clone();</span><br></pre></td></tr></table></figure>
+<p>但是编译器会进行一定的优化，具体怎么优化的我还没测试。。</p>
+</li>
+</ol>
+<h3 id="虚拟继承下的-virtual-function"><a href="#虚拟继承下的-virtual-function" class="headerlink" title="虚拟继承下的 virtual function"></a>虚拟继承下的 virtual function</h3><p>众所周知，在虚拟继承下， class 模型又有些不同，那么 virtual function 会发什么什么呢？</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210510152437038.png" alt="image-20210510152437038"></p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210510152459505.png" alt="image-20210510152459505"></p>
+<p>在上面的模型中，可以看出，virtual base class 被放到下面了，derived class 的 vtbl 中有一个指针指出到 virtual base class 的 offset。而且有一个很切实的建议，virtual base class 里面不要声明 nonstatic data members。</p>
+<h2 id="指向-member-function-的指针"><a href="#指向-member-function-的指针" class="headerlink" title="指向 member function 的指针"></a>指向 member function 的指针</h2><p>既然 class 的 member function 是存放在 object 之外的，那我们能不能直接访问到这些 function 的地址呢？</p>
+<p>对于一个 nonstatic member function，取它的地址，得到的结果是它在内存的地址，但是这个地址是不完全的，它需要被绑定于某个 class object 的地址上，才能通过它调用该函数。</p>
+<p>一个指向 member function 的指针，声明如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">double</span> (Point::* pmf)();</span><br><span class="line"><span class="comment">//return type class the function is member name of pointer to member argument list</span></span><br></pre></td></tr></table></figure>
+<p>我们可以这样定义并初始化该指针：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">double</span> (Point::*coord)() = &amp;Point::x;</span><br></pre></td></tr></table></figure>
+<p>也可以</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">coord = &amp;Point::y;</span><br></pre></td></tr></table></figure>
+<p>通过下面的方法调用：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">(origin.*coord)();</span><br><span class="line">(ptr-&gt;*coord)();</span><br><span class="line"><span class="comment">//它们会被编译器转化为</span></span><br><span class="line">(coord)(&amp;origin);</span><br><span class="line">(coord)(ptr);</span><br></pre></td></tr></table></figure>
+<h3 id="多重继承下，指向-member-function-的指针"><a href="#多重继承下，指向-member-function-的指针" class="headerlink" title="多重继承下，指向 member function 的指针"></a>多重继承下，指向 member function 的指针</h3><p>在多重继承下，我们实现指针呢？特别是 virtual function，对于一个 virtual function，其地址在编译时期是未知的，所能知道的进士 virtual function 在其相关的 virtual table 的索引值。</p>
+<p>一个一般操作：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> __<span class="title">mptr</span> &#123;</span></span><br><span class="line">	<span class="keyword">int</span> delta;</span><br><span class="line">	<span class="keyword">int</span> index;</span><br><span class="line">	<span class="class"><span class="keyword">union</span> &#123;</span></span><br><span class="line">		ptrtofunc	faddr;</span><br><span class="line">		<span class="keyword">int</span>			v_offset;</span><br><span class="line">	&#125;;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>index 和 faddr 分别持有virtual table 索引和 nonvirtual member function 地址。</p>
+<p><code>(ptr-&gt;*pmf)();</code> 调用操作会变成</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">(pmf.index &lt; <span class="number">0</span>) ? (*pmf.faddr)(ptr) : (*ptr-&gt;vptr[pmf.index](ptr));</span><br></pre></td></tr></table></figure>
+<p>显然，这样做的话，每次调用一个 member function 都要经过这样的计算，需要消耗大量时间，所以现在有的编译器根据 class 的不同提供多种指向 member function 的指针形式：</p>
+<ul>
+<li>一个单一继承实例（其中持有 vcall thunk 地址或是函数地址）</li>
+<li>一个多重继承实例（其中持有 faddr 和 delta 两个 members）</li>
+<li>一个虚拟继承实例（其中持有 4 个 members）</li>
+</ul>
+<p>针对 inline 函数，我后面应该会单独讨论一下。</p>
+<p><strong>reference</strong></p>
+<p>深入探索 C++ 对象模型</p>
 
     </div>
 
@@ -348,7 +398,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#C-class-%E7%9A%84-function"><span class="nav-number">1.</span> <span class="nav-text">C++ class 的 function</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#static-member-function"><span class="nav-number">2.</span> <span class="nav-text">static member function</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#nonstatic-member-function"><span class="nav-number">3.</span> <span class="nav-text">nonstatic member function</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#virtual-function"><span class="nav-number">4.</span> <span class="nav-text">virtual function</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8D%95%E4%B8%80%E7%BB%A7%E6%89%BF"><span class="nav-number">4.1.</span> <span class="nav-text">单一继承</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%9A%E9%87%8D%E7%BB%A7%E6%89%BF"><span class="nav-number">4.2.</span> <span class="nav-text">多重继承</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#C-class-%E7%9A%84-function"><span class="nav-number">1.</span> <span class="nav-text">C++ class 的 function</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#static-member-function"><span class="nav-number">2.</span> <span class="nav-text">static member function</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#nonstatic-member-function"><span class="nav-number">3.</span> <span class="nav-text">nonstatic member function</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#virtual-function"><span class="nav-number">4.</span> <span class="nav-text">virtual function</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8D%95%E4%B8%80%E7%BB%A7%E6%89%BF"><span class="nav-number">4.1.</span> <span class="nav-text">单一继承</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%9A%E9%87%8D%E7%BB%A7%E6%89%BF"><span class="nav-number">4.2.</span> <span class="nav-text">多重继承</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%99%9A%E6%8B%9F%E7%BB%A7%E6%89%BF%E4%B8%8B%E7%9A%84-virtual-function"><span class="nav-number">4.3.</span> <span class="nav-text">虚拟继承下的 virtual function</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8C%87%E5%90%91-member-function-%E7%9A%84%E6%8C%87%E9%92%88"><span class="nav-number">5.</span> <span class="nav-text">指向 member function 的指针</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%9A%E9%87%8D%E7%BB%A7%E6%89%BF%E4%B8%8B%EF%BC%8C%E6%8C%87%E5%90%91-member-function-%E7%9A%84%E6%8C%87%E9%92%88"><span class="nav-number">5.1.</span> <span class="nav-text">多重继承下，指向 member function 的指针</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
