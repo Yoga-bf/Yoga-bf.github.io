@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="在现代C++里，auto_ptr智能指针逐渐减少使用，而使用更加好用的shared_ptr和unique_ptr，在一些特殊情况下也会使用weak_ptr。可是现代的C++提供的封装性，使得我们要考虑智能指针的一些问题？我们应该怎么使用它们？">
+<meta property="og:type" content="article">
+<meta property="og:title" content="现代C++智能指针">
+<meta property="og:url" content="http://example.com/2021/05/17/%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88/index.html">
+<meta property="og:site_name" content="程序设计入微">
+<meta property="og:description" content="在现代C++里，auto_ptr智能指针逐渐减少使用，而使用更加好用的shared_ptr和unique_ptr，在一些特殊情况下也会使用weak_ptr。可是现代的C++提供的封装性，使得我们要考虑智能指针的一些问题？我们应该怎么使用它们？">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210517195614021.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210517200653384.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20171101114849592">
+<meta property="article:published_time" content="2021-05-17T15:48:44.032Z">
+<meta property="article:modified_time" content="2021-05-17T15:05:41.000Z">
+<meta property="article:author" content="Bofan Chen">
+<meta property="article:tag" content="学习笔记">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210517195614021.png">
+
+<link rel="canonical" href="http://example.com/2021/05/17/%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>现代C++智能指针 | 程序设计入微</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">程序设计入微</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/05/17/%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/logo.jpg">
+      <meta itemprop="name" content="Bofan Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="程序设计入微">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          现代C++智能指针
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-05-17 23:48:44 / 修改时间：23:05:41" itemprop="dateCreated datePublished" datetime="2021-05-17T23:48:44+08:00">2021-05-17</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C++</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/modern-C/" itemprop="url" rel="index"><span itemprop="name">modern C++</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/modern-C/%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88/" itemprop="url" rel="index"><span itemprop="name">智能指针</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">在现代C++里，auto_ptr智能指针逐渐减少使用，而使用更加好用的shared_ptr和unique_ptr，在一些特殊情况下也会使用weak_ptr。可是现代的C++提供的封装性，使得我们要考虑智能指针的一些问题？我们应该怎么使用它们？</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="智能指针的简介"><a href="#智能指针的简介" class="headerlink" title="智能指针的简介"></a>智能指针的简介</h2><p><a target="_blank" rel="noopener" href="https://zh.cppreference.com/w/cpp/memory">动态内存管理 - 智能指针</a></p>
+<p>在现代的C++标准里，已经删除了 auto_ptr 指针类型，只留下了 <a target="_blank" rel="noopener" href="https://zh.cppreference.com/w/cpp/memory/unique_ptr">std::unique_ptr</a>、<a target="_blank" rel="noopener" href="https://zh.cppreference.com/w/cpp/memory/shared_ptr">std::shared_ptr</a>、<a target="_blank" rel="noopener" href="https://zh.cppreference.com/w/cpp/memory/weak_ptr">std::weak_ptr</a></p>
+<p>unique_ptr 和 shared_ptr 就如同它们的名字一样，很清晰的能明白它们的作用，先首先介绍一下它们：</p>
+<h3 id="unique-ptr"><a href="#unique-ptr" class="headerlink" title="unique_ptr"></a>unique_ptr</h3><p>unique_ptr 是通过指针占有并管理另一对象，并在unique_ptr离开作用域的时候释放指针。并在以下两种情况调用删除器释放对象</p>
+<ul>
+<li>销毁了管理的 unique_ptr 对象</li>
+<li>通过 operator= 或 reset() 赋值另一指针给管理的 unique_ptr 对象</li>
+</ul>
+<p>unique_ptr 可以使用移动构造或者自动赋值，但不能使用复制构造或复制赋值</p>
+<p>同样的 unique_ptr 可以自定义析构器：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Investment</span> &#123;</span>...&#125;;</span><br><span class="line"><span class="keyword">auto</span> delInvmt = [](Investment)</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">delete</span> pInvestment;</span><br><span class="line">			&#125;;</span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span>... Ts&gt;</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">unique_ptr</span>&lt;Investment, <span class="keyword">decltype</span>(delInvmt)&gt;</span><br><span class="line">makeInvestment(Ts&amp;&amp;... params)</span><br><span class="line">&#123;</span><br><span class="line">	std::unique_ptr&lt;Investment, decltype(delInvmt)&gt; pInv(nullptr, delInvmt);</span><br><span class="line">	pInv.reset(<span class="keyword">new</span> Investment(<span class="built_in">std</span>::forward&lt;Ts&gt;(params)...));</span><br><span class="line">	<span class="keyword">return</span> pInv;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在上面的代码里，通过定义一个 lambda 表达式作为 unique_ptr 的析构函数。通常的，一个 unique_ptr 指针的大小和裸指针相同，不过如果使用自定义析构函数的话，就会有些不同：</p>
+<ul>
+<li>如果析构函数是普通函数，那么 unique_ptr 会比裸指针大1、2个字</li>
+<li>如果析构函数是函数对象，带来的状态变化需要取决于函数对象存储多少状态</li>
+<li>无状态函数对象（lambda）不会浪费任何存储尺寸</li>
+</ul>
+<p>所以需要用到自定义析构函数的时候，lambda 是个不错的选择。</p>
+<p>同样的，可以看出，创建 unique_ptr 的时候是先创建一个空的 unique_ptr，然后将它指涉到适当类型的对象，我这里这样写并没有什么特殊含义，只是想表示它能这么做，如果在这个函数里，可以根据某些参数决定这个 unique_ptr 指向的对象时，这样写是有意义的。而且，不允许从裸指针转换到 unique_ptr，所以就采用了 reset 指定 pInv 获取使用 new 对象符产生的对象的所有权。</p>
+<p>unique_ptr 具有数组的形式，但是不建议使用</p>
+<h3 id="shared-ptr"><a href="#shared-ptr" class="headerlink" title="shared_ptr"></a>shared_ptr</h3><p>shared_ptr 是通过指针保持对象共享所有权的智能指针。多个 shared_ptr 对象可占用同一对象，在</p>
+<ul>
+<li>最后剩下的占有对象的 shared_ptr 被销毁</li>
+<li>最后剩下的占有对象的 shared_ptr 被通过 operator= 或 reset() 赋值另一指针</li>
+</ul>
+<p>时，对象会被销毁。</p>
+<p>同样的 shared_ptr 也可以指定自定义删除器。但是与 unique_ptr 不同， shared_ptr 的大小固定是裸指针的二倍，一个指针指向真正的对象，另一个指针指向该资源的引用计数等。</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210517195614021.png" alt="image-20210517195614021"></p>
+<p>创建控制块遵循规则：</p>
+<ul>
+<li>使用 std::make_shared 总是创建一个控制块</li>
+<li>从具备专属所有权的指针（unique_ptr, auto_ptr）出发构造一个 std::shared_ptr 时，会创建一个控制块</li>
+<li>当一个裸指针作为 shared_ptr 的构造函数的实参时，创建一个控制块</li>
+</ul>
+<p>事实上，如果使用裸指针作为 shared_ptr 的构造函数的实参时，很容易犯错，例如构造多个控制块：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">auto</span> pw = <span class="keyword">new</span> Widgt;</span><br><span class="line"><span class="function"><span class="built_in">std</span>::<span class="built_in">shared_ptr</span>&lt;Widgt&gt; <span class="title">pw1</span><span class="params">(pw, loggingDel)</span></span>;</span><br><span class="line"><span class="function"><span class="built_in">std</span>::<span class="built_in">shared_ptr</span>&lt;Widgt&gt; <span class="title">pw2</span><span class="params">(pw, loggingDel)</span></span>;		<span class="comment">//loggingDel 是自定义析构器</span></span><br><span class="line"><span class="comment">//wrong!</span></span><br></pre></td></tr></table></figure>
+<p>这样编写会出错误，所以一定不要这么做。</p>
+<h3 id="weak-ptr"><a href="#weak-ptr" class="headerlink" title="weak_ptr"></a>weak_ptr</h3><p>在 cppreference 上，weak_ptr 的定义是：</p>
+<p>weak_ptr 是一种智能指针，它对被 shared_ptr 管理的对象存在非拥有性（“弱”）引用，在访问所引用的对象前必须先转换为 shared_ptr。</p>
+<p>weak_ptr 用来表达临时所有权的概念，当对象只有存在时才需要被访问，而且随时可能被他人删除时，可以使用 weak_ptr 来跟踪该对象，需要获得临时所有权时，则将其转换为 shared_ptr，此时如果原来的 shared_ptr 被销毁，则该对象的生命期被延长至这个临时的 shared_ptr 同样被销毁为止。</p>
+<p>weak_ptr 的另一个用法是打断 shared_ptr 所管理的对象组成的环状引用。</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210517200653384.png" alt="image-20210517200653384"></p>
+<p>如上图，如果 B 需要一个指针指向 A，那么如果使用 shared_ptr ，就会阻止A和B被析构，导致内存泄漏。</p>
+<h2 id="如何创建指针"><a href="#如何创建指针" class="headerlink" title="如何创建指针"></a>如何创建指针</h2><p>按照现代C++的观点，我们应该优先选用 std::make_unique, std::make_shared, std::allocate_shared 创建指针，而非 new，这是因为我们尽量做到异常安全和加快程序运行速度。</p>
+<p>事实上，我们在Effective C++里面就讨论过异常安全的问题<a target="_blank" rel="noopener" href="http://yogacbf.com/2021/03/01/%E8%B5%84%E6%BA%90%E7%AE%A1%E7%90%86/">资源管理</a>，我们在这里要求使用 make 系列的函数创建指针也是出于同样的考虑：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">processWidget</span><span class="params">(<span class="built_in">std</span>::<span class="built_in">shared_ptr</span>&lt;Widget&gt; pw1, <span class="keyword">int</span> priority)</span></span>;</span><br><span class="line">processWidget(<span class="built_in">std</span>::<span class="built_in">shared_ptr</span>&lt;Widget&gt;(<span class="keyword">new</span> Widget), computePriority());</span><br></pre></td></tr></table></figure>
+<p>在这里，编译器同样会做一些优化，但是三个事情必须在调用 processWidget 之前完成：</p>
+<ul>
+<li>表达式 new Widget 必须完成评估求职，即一个 Widget 对象必须先在堆上创建</li>
+<li>由 new 产生的裸指针的托管对象 std::shared_ptr&lt;Widget&gt; 的构造函数必须执行</li>
+<li>computePriority 必须执行</li>
+</ul>
+<p>但是执行的顺序是不确定的，虽然1必须在2前面，但是3的位置不确定，有可能在堆上创建对象 Widget 之后，3 出错，那就会导致内存泄漏，但是，如果这里使用 make 系列的函数：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">processWidget(<span class="built_in">std</span>::make_shared&lt;Widget&gt;(), computePriority());</span><br></pre></td></tr></table></figure>
+<p>这样就不会存在这种风险。</p>
+<p>而且 make 系列的函数效率也比通过 new 创建裸指针然后构造 shared_ptr 效率高。因为通过 new 只会创建对象的内存块，控制块还需要在构造函数中生成，但是如果使用 make 系列的函数，那么就只需要一次申请内存块，显然是有好处的。</p>
+<p>但是当要使用定制删除器的时候，我们就要不得不使用 new 表达式了，这时候要处理资源泄露问题，就要通过<a target="_blank" rel="noopener" href="http://yogacbf.com/2021/03/01/%E8%B5%84%E6%BA%90%E7%AE%A1%E7%90%86/">资源管理</a>第四节介绍的方法了。</p>
+<p>但是这里有一个小问题，可以看出，在 processWidget 函数里，实参不是以指针或引用传递的，那么就是传递的右值，而通过Effective的方法生成的代码如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="built_in">std</span>::<span class="built_in">shared_ptr</span>&lt;Widget&gt; <span class="title">spw</span><span class="params">(<span class="keyword">new</span> Widget, cusDel)</span></span>;</span><br><span class="line">processWidget(spw, computePriority());</span><br></pre></td></tr></table></figure>
+<p>这里，spw 是一个左值，如果要传递到 processWidget 函数里，那么还需要一个复制，所以我们可以这么做：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">processWidget(<span class="built_in">std</span>::move(spw), computePriority());</span><br></pre></td></tr></table></figure>
+<p>同样的，有一个小问题，如果我们想用 {} 进行初始化，那么我们也不能用 make 系列函数，因为在 make 系列内部是通过 () 进行初始化的。这个问题还没有在编程里遇到过。。</p>
+<p>还有两种情况是不建议使用针对 shared_ptr 的 make 系列函数：</p>
+<ul>
+<li>自定义内存管理的类</li>
+<li>内存紧张的系统、非常大的对象、以及存在比指到相同对象的 shared_ptr 生存期更久的 weak_ptr</li>
+</ul>
+<p>因为 shared_ptr 通过 make 系列函数生成的还有控制块，而如果自定义内存管理的类的 operator new 和 operator delete，那么 std::allocate_shared 和 自定义析构器就不适用了。</p>
+<p>对于后面这一种情况，是因为通过 make 系列生成的对象的内存块和控制块是同时生成和释放的，所以如果存在 weak_ptr 指向引用计数等于 0 的对象，那么这个对象的内存和控制块也不会释放，即使已经没有有效指针指向这个对象。但是如果是通过 new 创建的对象，那么就只会保留控制块。</p>
+<h2 id="Pimpl-Pointer-to-implementation-方法"><a href="#Pimpl-Pointer-to-implementation-方法" class="headerlink" title="Pimpl(Pointer to implementation) 方法"></a>Pimpl(Pointer to implementation) 方法</h2><p>实话实说，我还是在 Effective modern C++ 中第一次看到这个东西，虽然以前在知乎上好像看到过，但是没有仔细了解。</p>
+<p>这里就来讨论一下这个问题，什么是 Pimpl 呢，按照我的理解，就是在类中通过一个指针，指向自己的实现</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20171101114849592" alt="img"></p>
+<p>这是设计模式中的一个问题，即通过一个指针指向自己实现，这样写有什么好处呢？</p>
+<p>在我实际的编码过程中，如果一个 class 包含了许多成员，特别是一些别的头文件声明和定义的成员或者结构，那么这个头文件就需要包含那些头文件，这会导致编译的时间过长，特别是较大的项目。而且如果头文件更改，那么它们就需要重新编译这个 .h 文件。并且可以看出，使用这种模式把实现细节都封装起来了。</p>
+<p>如果使用 Pimpl 设计模式的话，当然也会引出一些问题，例如代码架构更难看出来，还有一些问题是本节要讨论的。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag"># 学习笔记</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/05/16/C++%E7%B1%BB%E5%9E%8B%E6%8E%A8%E5%AF%BC/" rel="prev" title="C++类型推导">
+      <i class="fa fa-chevron-left"></i> C++类型推导
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88%E7%9A%84%E7%AE%80%E4%BB%8B"><span class="nav-number">1.</span> <span class="nav-text">智能指针的简介</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#unique-ptr"><span class="nav-number">1.1.</span> <span class="nav-text">unique_ptr</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#shared-ptr"><span class="nav-number">1.2.</span> <span class="nav-text">shared_ptr</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#weak-ptr"><span class="nav-number">1.3.</span> <span class="nav-text">weak_ptr</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%88%9B%E5%BB%BA%E6%8C%87%E9%92%88"><span class="nav-number">2.</span> <span class="nav-text">如何创建指针</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Pimpl-Pointer-to-implementation-%E6%96%B9%E6%B3%95"><span class="nav-number">3.</span> <span class="nav-text">Pimpl(Pointer to implementation) 方法</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Bofan Chen"
+      src="/images/logo.jpg">
+  <p class="site-author-name" itemprop="name">Bofan Chen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">59</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">60</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Bofan Chen</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
