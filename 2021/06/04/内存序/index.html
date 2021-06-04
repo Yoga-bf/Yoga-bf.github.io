@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="现代编译器和CPU的功能十分强大，为了提高程序的运行速度，可能会改变程序的运行顺序，可是这个在并行程序里面会引来一些问题，我们需要针对这个问题去定义一些内存序，让编译器和CPU不会修改我们想要的内存序。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++并发-内存序">
+<meta property="og:url" content="http://example.com/2021/06/04/%E5%86%85%E5%AD%98%E5%BA%8F/index.html">
+<meta property="og:site_name" content="程序设计入微">
+<meta property="og:description" content="现代编译器和CPU的功能十分强大，为了提高程序的运行速度，可能会改变程序的运行顺序，可是这个在并行程序里面会引来一些问题，我们需要针对这个问题去定义一些内存序，让编译器和CPU不会修改我们想要的内存序。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-06-04T08:58:33.905Z">
+<meta property="article:modified_time" content="2021-06-04T08:51:19.000Z">
+<meta property="article:author" content="Bofan Chen">
+<meta property="article:tag" content="学习笔记">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2021/06/04/%E5%86%85%E5%AD%98%E5%BA%8F/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>C++并发-内存序 | 程序设计入微</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">程序设计入微</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/06/04/%E5%86%85%E5%AD%98%E5%BA%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/logo.jpg">
+      <meta itemprop="name" content="Bofan Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="程序设计入微">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          C++并发-内存序
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-06-04 16:58:33 / 修改时间：16:51:19" itemprop="dateCreated datePublished" datetime="2021-06-04T16:58:33+08:00">2021-06-04</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C++</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/%E5%B9%B6%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">并发</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">现代编译器和CPU的功能十分强大，为了提高程序的运行速度，可能会改变程序的运行顺序，可是这个在并行程序里面会引来一些问题，我们需要针对这个问题去定义一些内存序，让编译器和CPU不会修改我们想要的内存序。</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="内存序"><a href="#内存序" class="headerlink" title="内存序"></a>内存序</h2><p>在之前，曾经浅显讨论过关于内存模型的一致性问题，在那里有考虑过内存的修改顺序问题。<a target="_blank" rel="noopener" href="http://yogacbf.com/2021/03/01/%E5%A4%9A%E6%A0%B8/">同步原语之多核</a>，这个是从操作系统的角度来看待这个问题，最近在读 C++并发编程实战 的时候，看到了 C++ 针对内存序所做的工作，因此，我在这里就做一个讨论工作。</p>
+<h2 id="分类"><a href="#分类" class="headerlink" title="分类"></a>分类</h2><p>C++ 内存序的原语共有六种</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">enum</span> <span class="title">memory_order</span> &#123;</span></span><br><span class="line">    memory_order_relaxed,</span><br><span class="line">    memory_order_consume,</span><br><span class="line">    memory_order_acquire,</span><br><span class="line">    memory_order_release,</span><br><span class="line">    memory_order_acq_rel,</span><br><span class="line">    memory_order_seq_cst</span><br><span class="line">&#125; memory_order;</span><br></pre></td></tr></table></figure>
+<h3 id="memory-order-relaxed"><a href="#memory-order-relaxed" class="headerlink" title="memory_order_relaxed"></a>memory_order_relaxed</h3><p>这个原语对C++的访问顺序并没有什么限制，加与不加它的时候结果是相同的。</p>
+<h3 id="memory-order-release"><a href="#memory-order-release" class="headerlink" title="memory_order_release"></a>memory_order_release</h3><p>A store operation with this memory order performs the <em>release operation</em>: no reads or writes in the current thread can be reordered after this store. All writes in the current thread are visible in other threads that acquire the same atomic variable (see <a target="_blank" rel="noopener" href="https://en.cppreference.com/w/cpp/atomic/memory_order#Release-Acquire_ordering">Release-Acquire ordering</a> below) and writes that carry a dependency into the atomic variable become visible in other threads that consume the same atomic (see <a target="_blank" rel="noopener" href="https://en.cppreference.com/w/cpp/atomic/memory_order#Release-Consume_ordering">Release-Consume ordering</a> below).</p>
+<p>这个原语是为了保障写，这条语句之前的写操作不能放在这条语句后面。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">std</span>::atomic&lt;<span class="keyword">bool</span>&gt; has_release;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">release_software</span><span class="params">(<span class="keyword">int</span> *data)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">int</span> a = <span class="number">100</span>;</span><br><span class="line">	<span class="keyword">int</span> c = <span class="number">200</span>;</span><br><span class="line">	<span class="keyword">if</span> (!data) &#123;</span><br><span class="line">		data = <span class="keyword">new</span> <span class="keyword">int</span>[<span class="number">100</span>];</span><br><span class="line">	&#125;</span><br><span class="line">	has_release.store(<span class="literal">true</span>, memory_order_release);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在 has_release 的 store 操作前，a, c, data 的赋值可能乱序，但是它们不会跑到 has_release 语句的后面</p>
+<h3 id="memory-order-acquire"><a href="#memory-order-acquire" class="headerlink" title="memory_order_acquire"></a>memory_order_acquire</h3><p>A load operation with this memory order performs the <em>acquire operation</em> on the affected memory location: no reads or writes in the current thread can be reordered before this load. All writes in other threads that release the same atomic variable are visible in the current thread</p>
+<p>memory_order_acquire 的任务是为了保证在其后面的读操作不会被调整到其前面。这个语句一般是为了检测需要读取的数据是否已经准备好</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">std</span>::atomic&lt;<span class="keyword">bool</span>&gt; has_release;</span><br><span class="line"><span class="keyword">int</span> *data = <span class="literal">nullptr</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">release_software</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span>(!data) &#123;</span><br><span class="line">		data = <span class="keyword">new</span> <span class="keyword">int</span>[<span class="number">100</span>];</span><br><span class="line">	&#125;</span><br><span class="line">	has.release.store(<span class="literal">true</span>, memory_order_release);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">acquire_software</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	<span class="keyword">while</span>(!has_release.load(memory_order_acquire));</span><br><span class="line">	<span class="keyword">int</span> x = *data;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在这个用例里面可以看出它的作用，这里 <code>int x = *data</code> 语句不会跑到 while 语句前面，即只有数据准备好的时候，才会读取数据。</p>
+<h3 id="memory-order-consume"><a href="#memory-order-consume" class="headerlink" title="memory_order_consume"></a>memory_order_consume</h3><p>A load operation with this memory order performs a <em>consume operation</em> on the affected memory location: no reads or writes in the current thread dependent on the value currently loaded can be reordered before this load. Writes to data-dependent variables in other threads that release the same atomic variable are visible in the current thread. On most platforms, this affects compiler optimizations only (see <a target="_blank" rel="noopener" href="https://en.cppreference.com/w/cpp/atomic/memory_order#Release-Consume_ordering">Release-Consume ordering</a> below)</p>
+<p>在 cppreference 里面可以看出 consume 和 acquire 是有一些不同，在当前线程里，依赖于当前加载值的读写操作均不能放在这个操作之前。重要的是“依赖”这个限定。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">std</span>::atomic&lt;<span class="built_in">std</span>::<span class="built_in">string</span>*&gt; ptr;</span><br><span class="line"><span class="keyword">int</span> data;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">release_software</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	<span class="built_in">std</span>::<span class="built_in">string</span>* p  = <span class="keyword">new</span> <span class="built_in">std</span>::<span class="built_in">string</span>(<span class="string">&quot;Hello&quot;</span>);</span><br><span class="line">	data = <span class="number">42</span>;</span><br><span class="line">	ptr.store(p, memory_order_release);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">consume_software</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	<span class="built_in">std</span>::<span class="built_in">string</span>* p2;</span><br><span class="line">	<span class="keyword">while</span>(!(p2 = ptr.load(memory_order_consume)));</span><br><span class="line">	assert(*p2 == <span class="string">&quot;Hello&quot;</span>); <span class="comment">// 绝无出错： *p2 从 ptr 携带依赖</span></span><br><span class="line">    assert(data == <span class="number">42</span>);		<span class="comment">//可能出错</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果在程序里面这样编写，那么 <code>assert(data == 42)</code> 可能会被调整到 while 语句前面。</p>
+<h3 id="memory-order-acq-rel"><a href="#memory-order-acq-rel" class="headerlink" title="memory_order_acq_rel"></a>memory_order_acq_rel</h3><p>A read-modify-write operation with this memory order is both an <em>acquire operation</em> and a <em>release operation</em>. No memory reads or writes in the current thread can be reordered before or after this store. All writes in other threads that release the same atomic variable are visible before the modification and the modification is visible in other threads that acquire the same atomic variable.</p>
+<p>这个操作是为了同时保证读和写，即在这个的保证下，写不会调整到其后，读不会调整到其前。</p>
+<h3 id="memory-order-seq-cst"><a href="#memory-order-seq-cst" class="headerlink" title="memory_order_seq_cst"></a>memory_order_seq_cst</h3><p>A load operation with this memory order performs an <em>acquire operation</em>, a store performs a <em>release operation</em>, and read-modify-write performs both an <em>acquire operation</em> and a <em>release operation</em>, plus a single total order exists in which all threads observe all modifications in the same order (see <a target="_blank" rel="noopener" href="https://en.cppreference.com/w/cpp/atomic/memory_order#Sequentially-consistent_ordering">Sequentially-consistent ordering</a> below)</p>
+<p>这个 cppreference 的用例还没看太明白，暂时的理解是在这条语句前后的读写都不会改变顺序。</p>
+<p><strong>reference</strong></p>
+<ul>
+<li>cppreference</li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/55901945">c++并发编程1.内存序</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag"># 学习笔记</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/05/25/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="prev" title="线程安全STL-stack_queue_线程池">
+      <i class="fa fa-chevron-left"></i> 线程安全STL-stack_queue_线程池
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E5%BA%8F"><span class="nav-number">1.</span> <span class="nav-text">内存序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E7%B1%BB"><span class="nav-number">2.</span> <span class="nav-text">分类</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#memory-order-relaxed"><span class="nav-number">2.1.</span> <span class="nav-text">memory_order_relaxed</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#memory-order-release"><span class="nav-number">2.2.</span> <span class="nav-text">memory_order_release</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#memory-order-acquire"><span class="nav-number">2.3.</span> <span class="nav-text">memory_order_acquire</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#memory-order-consume"><span class="nav-number">2.4.</span> <span class="nav-text">memory_order_consume</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#memory-order-acq-rel"><span class="nav-number">2.5.</span> <span class="nav-text">memory_order_acq_rel</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#memory-order-seq-cst"><span class="nav-number">2.6.</span> <span class="nav-text">memory_order_seq_cst</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Bofan Chen"
+      src="/images/logo.jpg">
+  <p class="site-author-name" itemprop="name">Bofan Chen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">62</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">62</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Bofan Chen</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
