@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="GFS是Google三驾马车中的文件系统，在这里，能够探索为什么google要这样架构他们的文件系统">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Google三驾马车——GFS">
+<meta property="og:url" content="http://example.com/2021/06/07/GFS%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:site_name" content="程序设计入微">
+<meta property="og:description" content="GFS是Google三驾马车中的文件系统，在这里，能够探索为什么google要这样架构他们的文件系统">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210607220214.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210607222312.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210607223640.png">
+<meta property="article:published_time" content="2021-06-07T14:57:46.360Z">
+<meta property="article:modified_time" content="2021-06-07T14:57:21.902Z">
+<meta property="article:author" content="Bofan Chen">
+<meta property="article:tag" content="论文笔记">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210607220214.png">
+
+<link rel="canonical" href="http://example.com/2021/06/07/GFS%E7%AC%94%E8%AE%B0/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Google三驾马车——GFS | 程序设计入微</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">程序设计入微</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/06/07/GFS%E7%AC%94%E8%AE%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/logo.jpg">
+      <meta itemprop="name" content="Bofan Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="程序设计入微">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Google三驾马车——GFS
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-06-07 22:57:46 / 修改时间：22:57:21" itemprop="dateCreated datePublished" datetime="2021-06-07T22:57:46+08:00">2021-06-07</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" itemprop="url" rel="index"><span itemprop="name">分布式</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">GFS是Google三驾马车中的文件系统，在这里，能够探索为什么google要这样架构他们的文件系统</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><em>随着网络的发展，我们对于高性能的需求越来越强烈，对于文件系统也是如此，我们希望拥有一个能够高速且大容量的文件系统。但是文件系统大了之后，难免会导致出错，毕竟机器是有概率出错的，为了实现容错，我们以复制的方式去达成这个目标，但是复制也就带来了同步的问题，即内容一致性，为了保证一致性，我们需要更多的通信和限制，也就降低了性能，所以我们有时候会对这个进行取舍，即放弃一定的一致性来获得更高的性能，这在 GFS 中能够体现，但是现在的分布式文件系统在一致性上有更高的要求，但是这也不能否认 GFS 的优秀。</em></p>
+<h2 id="分布式文件系统面临的问题"><a href="#分布式文件系统面临的问题" class="headerlink" title="分布式文件系统面临的问题"></a>分布式文件系统面临的问题</h2><ol>
+<li>在分布式文件系统里，机器是廉价并且数量繁多，所以不能保证每个机器都不出错，换言之，机器出故障应该是常态，我们要做到持续监控，错误检测，容错和自动故障恢复</li>
+<li>由于文件大小的急速增长，如果使用传统的小文件形式，可能会导致文件数量繁多，增加操作的复杂度，所以需要适量调整每个chunk的大小</li>
+<li>在实际的分布式文件系统里，更多是对文件内容的追加（record append）而不是覆写（overwrite），所以为了优化文件系统的性能，要着重考虑优化如何追加，而且要做到对文件内容的原子操作</li>
+<li>设计GFS和应用程序的API</li>
+</ol>
+<h2 id="假设"><a href="#假设" class="headerlink" title="假设"></a>假设</h2><p>为了解决这些问题，他们对文件系统做了一些假设</p>
+<ol>
+<li>机器很便宜，需要监控、容错以及自动故障恢复</li>
+<li>文件很大，必须要高效处理</li>
+<li>有两种读文件的方式，大的文件流和小的随机读，随机读的效率不用太高</li>
+<li>着重优化追加写</li>
+<li>必须在多 client 时表现良好，clients 可以同时访问文件，所以需要原子操作</li>
+<li>高带宽是必须的，事实上，Mapreduce 被弃用的原因也有很大一部分是因为 Mapreduce 会产生大量的网络流量</li>
+</ol>
+<h2 id="接口"><a href="#接口" class="headerlink" title="接口"></a>接口</h2><p>GFS 要能够像处理普通文件一样支持 open、close、create、delete、read、write、snapshot、record append</p>
+<h2 id="架构"><a href="#架构" class="headerlink" title="架构"></a>架构</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210607220214.png" alt="image-20210607220204294"></p>
+<p>上图是 GFS 的架构图，可以看出 GFS 把系统分为两个部分，一个 master 和 多个 chunkserver，master 负责维护 GFS 的信息，chunkserver 负责存储内容</p>
+<h3 id="master"><a href="#master" class="headerlink" title="master"></a>master</h3><p>master 存储着 namespace、access information 信息，同时，master 还存储着两张表：</p>
+<ol>
+<li>key：file name        value：array of chunk handles</li>
+<li>key：handle            value：list of chunkservers、version、primary、lease expiration</li>
+</ol>
+<p>当 client 向 master 发送文件名和 chunk index 后，master 查询到 chunk handle 和 locations 信息返回给 client，client 拿着这些信息去 chunkserver 查询信息。</p>
+<p>为了能够满足在 master 失效并重新启动或者更换 master 启动的时候整个系统能够正确运行，他们采用了 operation log 的形式去实现这些，他们在 operation log 中使用 B-tree，然后设置 checkpoint，在 checkpoint 时，master 会将整个系统的状态存储下来，这样当重启 master 时，就能寻找最近的 checkpoint 然后恢复状态。</p>
+<h3 id="chunkserver"><a href="#chunkserver" class="headerlink" title="chunkserver"></a>chunkserver</h3><p>chunkserver 存储着 GFS 的文件，以 Linux file system 的形式存储这些文件。</p>
+<p>在 chunkserver 实际使用的时候，每个 chunk 组，都会选择一个作为 primary，并且有 lease expiration。primary 是由 master 选出来的，lease expiration 是这个 primary 生存的周期，lease expiration 存在的目的主要是为了保证不会存在两个 primary，即使 primary 因为某些原因导致 master 无法联系到，master 也只会在 lease expiration 到期才会选择下一个 primary，因为 master 无法联系到 primary 可能是因为网络原因，而 primary 还在正常工作。</p>
+<p>primary 还有一个版本号（version），这个只有在更新 primary 之后才会由 master 更新，master 会把更新过后的版本号通知 chunk 组。通过版本号就能检测出 chunk 是否是老版本。</p>
+<h2 id="一致性"><a href="#一致性" class="headerlink" title="一致性"></a>一致性</h2><p>一致性是分布式文件系统中的一个重要议题，GFS 对于一致性并没有太高的保证。它保证的并不是 chunk 内容一致性，而是保证多个 clients 读同一个副本时保证一致性。</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210607222312.png" alt="image-20210607222311560"></p>
+<p>例如，在执行 record append 时，以下面的顺序执行：</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210607223640.png" alt="image-20210607223638632"></p>
+<ol>
+<li>client 向 master 发信息询问 chunk 的 location</li>
+<li>master 返回结果和 primary 的地址</li>
+<li>client 将数据按照链的方式发送出去，以减少带宽的消耗</li>
+<li>client 向 primary 发送 record append 请求，这里可能会发生并发请求，所以 primary 以一定的顺序存储这些请求和他们的 data ，一般使用 LRU buffer</li>
+<li>primary 告知 secondary replica 同样的执行顺序</li>
+<li>当执行结束后，secondary replica 会将结果告诉 primary</li>
+<li>如果都成功，向 client 返回 yes，反之返回 no</li>
+</ol>
+<p>如果返回 no，client 会再次发送 record append 请求，这样就会导致一个问题，即已经执行过 record append 的 replica 会再次执行，事实上，GFS 就是这样做的，所以它并没有很好的数据一致性，但是提供了较好的性能。</p>
+<h2 id="原子性"><a href="#原子性" class="headerlink" title="原子性"></a>原子性</h2><p>在执行文件操作的时候要保证原子性，虽然可能会因为顺序的问题导致不同副本内容不同。。</p>
+<p>例如，chunk 的 size 是 64MB，client1 需要向 chunk1 的 54MB 起始位置写入 20MB 的数据，因此有两个步骤：①在chunk1 写入 10MB 的数据，②向 chunk2 写入 10MB 的数据。同时 client2 需要向 chunk1 的 54MB 起始位置写入 20MB 的数据，也有两个步骤：③在chunk1 写入 10MB 的数据，④向 chunk2 写入 10MB 的数据。这四个步骤的执行顺序不同会导致文件的内容可能不是我们想要的，所以 write 在并发时是一致的，但是是未定义的（table1）。但是也没了原子性的保证</p>
+<p>如果是 record append 操作，那么就会不同，因为如果要 append 的数据会导致 chunk 越界，那么就会在一个新的 chunk 中进行 record append，所以 record append 是有原子性操作保证的，但是不一定具有一致性。</p>
+<h2 id="snapshot"><a href="#snapshot" class="headerlink" title="snapshot"></a>snapshot</h2><p>GFS 在实现 snapshot 的时候采用了比较朴素的方法，即加锁和 copy-on-write，一般的 snapshot 会复制目录，然后 master 会取消 chunk 集合的 primary，当 client 向 master 请求时，master 发现 chunk 的引用计数大于一，因此 master 就会让 chunkserver 进行复制，然后选出 primary 再返回给 client。</p>
+<h2 id="容错"><a href="#容错" class="headerlink" title="容错"></a>容错</h2><p>GFS 在容错上所做的努力，是尽量让每个设备在出错的时候尽快重启， fast recovery and replication.</p>
+<p>为了保障数据的完整性，针对每个 block 使用校验和。</p>
+<p>reference</p>
+<ul>
+<li>The Google File System</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0/" rel="tag"># 论文笔记</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/06/04/%E5%86%85%E5%AD%98%E5%BA%8F/" rel="prev" title="C++并发-内存序">
+      <i class="fa fa-chevron-left"></i> C++并发-内存序
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E5%B8%83%E5%BC%8F%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E9%9D%A2%E4%B8%B4%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">1.</span> <span class="nav-text">分布式文件系统面临的问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%81%87%E8%AE%BE"><span class="nav-number">2.</span> <span class="nav-text">假设</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8E%A5%E5%8F%A3"><span class="nav-number">3.</span> <span class="nav-text">接口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9E%B6%E6%9E%84"><span class="nav-number">4.</span> <span class="nav-text">架构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#master"><span class="nav-number">4.1.</span> <span class="nav-text">master</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#chunkserver"><span class="nav-number">4.2.</span> <span class="nav-text">chunkserver</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E8%87%B4%E6%80%A7"><span class="nav-number">5.</span> <span class="nav-text">一致性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E5%AD%90%E6%80%A7"><span class="nav-number">6.</span> <span class="nav-text">原子性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#snapshot"><span class="nav-number">7.</span> <span class="nav-text">snapshot</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%B9%E9%94%99"><span class="nav-number">8.</span> <span class="nav-text">容错</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Bofan Chen"
+      src="/images/logo.jpg">
+  <p class="site-author-name" itemprop="name">Bofan Chen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">63</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">63</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Bofan Chen</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
