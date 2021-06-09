@@ -20,20 +20,24 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="因为所有事情都可能的发生都是需要时间的，我们要仔细应对这些问题">
+  <meta name="description" content="为了提高容错，我们会将 server 进行复制。Replicated State Machine 是为了减少带宽消耗所提出的一种复制方法">
 <meta property="og:type" content="article">
-<meta property="og:title" content="分布式原子事务">
-<meta property="og:url" content="http://example.com/2021/04/09/%E5%88%86%E5%B8%83%E5%BC%8F%E5%8E%9F%E5%AD%90%E4%BA%8B%E5%8A%A1/index.html">
+<meta property="og:title" content="Replicated State Machine">
+<meta property="og:url" content="http://example.com/2021/06/09/vm-ft%E7%AC%94%E8%AE%B0/index.html">
 <meta property="og:site_name" content="程序设计入微">
-<meta property="og:description" content="因为所有事情都可能的发生都是需要时间的，我们要仔细应对这些问题">
+<meta property="og:description" content="为了提高容错，我们会将 server 进行复制。Replicated State Machine 是为了减少带宽消耗所提出的一种复制方法">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2021-04-09T14:55:33.102Z">
-<meta property="article:modified_time" content="2021-04-09T14:47:49.000Z">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210609122533.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210609124931.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210609130505.png">
+<meta property="article:published_time" content="2021-06-09T05:06:58.772Z">
+<meta property="article:modified_time" content="2021-06-09T05:06:40.074Z">
 <meta property="article:author" content="Bofan Chen">
-<meta property="article:tag" content="学习笔记">
+<meta property="article:tag" content="论文笔记">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210609122533.png">
 
-<link rel="canonical" href="http://example.com/2021/04/09/%E5%88%86%E5%B8%83%E5%BC%8F%E5%8E%9F%E5%AD%90%E4%BA%8B%E5%8A%A1/">
+<link rel="canonical" href="http://example.com/2021/06/09/vm-ft%E7%AC%94%E8%AE%B0/">
 
 
 <script id="page-configurations">
@@ -46,7 +50,7 @@
   };
 </script>
 
-  <title>分布式原子事务 | 程序设计入微</title>
+  <title>Replicated State Machine | 程序设计入微</title>
   
 
 
@@ -166,7 +170,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/04/09/%E5%88%86%E5%B8%83%E5%BC%8F%E5%8E%9F%E5%AD%90%E4%BA%8B%E5%8A%A1/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/06/09/vm-ft%E7%AC%94%E8%AE%B0/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/logo.jpg">
@@ -179,7 +183,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          分布式原子事务
+          Replicated State Machine
         </h1>
 
         <div class="post-meta">
@@ -190,7 +194,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-04-09 22:55:33 / 修改时间：22:47:49" itemprop="dateCreated datePublished" datetime="2021-04-09T22:55:33+08:00">2021-04-09</time>
+              <time title="创建时间：2021-06-09 13:06:58 / 修改时间：13:06:40" itemprop="dateCreated datePublished" datetime="2021-06-09T13:06:58+08:00">2021-06-09</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -202,16 +206,12 @@
                 </span>
                   ，
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E8%AF%BE%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">课程</span></a>
-                </span>
-                  ，
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E8%AF%BE%E7%A8%8B/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E5%90%8C%E6%AD%A5/" itemprop="url" rel="index"><span itemprop="name">分布式系统同步</span></a>
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
                 </span>
             </span>
 
           
-            <div class="post-description">因为所有事情都可能的发生都是需要时间的，我们要仔细应对这些问题</div>
+            <div class="post-description">为了提高容错，我们会将 server 进行复制。Replicated State Machine 是为了减少带宽消耗所提出的一种复制方法</div>
 
         </div>
       </header>
@@ -222,20 +222,30 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="事务模型"><a href="#事务模型" class="headerlink" title="事务模型"></a>事务模型</h2><h3 id="事务的特性"><a href="#事务的特性" class="headerlink" title="事务的特性"></a>事务的特性</h3><ul>
-<li>原子性（Atomic）：对外部世界来说，事物的发生是不可分割的</li>
-<li>一致性（Consistent）：事务不会破坏系统的恒定</li>
-<li>孤立性（Isolated）：并发的事务不会互相干扰</li>
-<li>持久性（Durable）：一旦一个事务提交，改变就是永远存在的</li>
+        <h2 id="为什么需要-failure-tolerance"><a href="#为什么需要-failure-tolerance" class="headerlink" title="为什么需要 failure tolerance"></a>为什么需要 failure tolerance</h2><p>机器总是会出故障的，无论是网络，硬件抑或是其他。我们不能完全信任一个会出错的机器，所以我们要有一定的容错机制，例如在 GFS 中，master 出错会导致很大的问题，他们使用的是复制 log 的方法，我们这里提出了机器层级上的 failure tolerance</p>
+<h2 id="failure-tolerance-的方式"><a href="#failure-tolerance-的方式" class="headerlink" title="failure tolerance 的方式"></a>failure tolerance 的方式</h2><p>一般来说，容错的机制有两种：</p>
+<ul>
+<li>state transfer</li>
+<li>replicated state machine</li>
 </ul>
-<h2 id="并发控制"><a href="#并发控制" class="headerlink" title="并发控制"></a>并发控制</h2><ul>
-<li>加锁法</li>
-<li>乐观并发控制</li>
-<li>时间戳</li>
+<p>state transfer 是将 primary 的所有状态传输给 backup，但是这种方法显然会导致带宽消耗极多</p>
+<p>在论文 “The Design of a Practical System for Fault-Tolerant Virtual Machines” 中，他们采用的 replicated state machine 方法成功的减少了带宽的消耗，同时还能够实现 failure tolerance</p>
+<h2 id="replicated-state-machine"><a href="#replicated-state-machine" class="headerlink" title="replicated state machine"></a>replicated state machine</h2><p>这种方法是将机器建模成状态机，在给定状态和确定性操作的时候，机器的状态是确定的，所以 primary 和 backup 只需要传递状态变化信息就好了</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210609122533.png" alt="image-20210609122523648"></p>
+<p>但是这个模型有一个关键问题，即有没有什么操作在 primary 和 backup 上会产生不同的影响？当然，分布式系统的时钟同步问题是一个众所周知的难题，所以 primary 和 backup 上关于时钟的操作一般会不一致。当然，这只是不一致操作的一种。为了解决这个问题，他们把这些不一致操作统统发送给 backup，不但包括命令的内容，还包括这个命令在第几条指令的时候执行，例如时钟中断，在第 100 条指令处执行，这时，backup 的指令的执行情况就和 primary 完全相同。</p>
+<h2 id="实际问题"><a href="#实际问题" class="headerlink" title="实际问题"></a>实际问题</h2><p><em>可以看出，replicated state machine 需要机器的指令以确切的顺序执行，但是现代机器的发展方式是多核的方式，多核引入的一个重要问题就是指令的执行顺序不确定，因此 replicated state machine 只适用于单核的模型，如果是多核的机器，一般是使用 state transfer 的方式。</em></p>
+<p>问题一：backup 的执行速度如果快于 primary 怎么办？<br>通过上述的描述可以发现，backup 的执行速度是绝对不能超过 primary 的，它必须跟着 primary 执行。为了解决这个问题，作者引入了 logging channel ，命令是通过 logging channel 进行传输的，只有 channel 中有数据的时候，backup 才能执行。</p>
+<p>问题二：如果 backup 故障了，要怎么办？<br>一般会通过 state transfer 再构建一个 backup，然后通过 replicated state machine 的方式进行同步</p>
+<p>问题三：primary 是如何保证 backup 会拥有所有操作信息的，即会不会发生 primary 返回给 cilent 信息后出故障，但是 backup 里面没有对这个 client 的操作信息？</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210609124931.png" alt="image-20210609124930338"></p>
+<p>可以看出，primary 在接收每个事件后，都会把信息发送给 backup，但是如果是一个 output operation，即 primary 要输出信息给 client，那么就需要 backup 返回给 primary 信息来确认收到后，primary 才能把信息发送给 client。这样，当 primary 出故障后，backup 能够运行到 primary 出故障前的状态，但是不保证只产生一次输出。</p>
+<p>问题四：它是如何防止 spilt-brain 问题的？<br>在这篇文章中，primary 和 backup 默认是使用共享外部磁盘的（Figure 1），即当一个 server 想成为 primary 的时候，它需要对磁盘执行 atomic test-and-set 操作，只有没有 primary 存在的时候这个操作才能成功，因此，系统中只会存在一个 primary。<br>但是如果没有 shared disk 时，例如下图：</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210609130505.png" alt="image-20210609130504320"></p>
+<p>就需要一个外部决策者来决定谁是 primary。并且，在 primary 和 backup 启动时，要手动同步两个磁盘的内容，以使得它们内容相同。</p>
+<p>reference</p>
+<ul>
+<li>The Design of a Practical System for Fault-Tolerant Virtual Machines</li>
 </ul>
-<p>为了实现事务的原子性，很多方法都是通过加锁的方式来实现的，但是使用锁通常会带来一些问题，其中最重要的问题就是死锁问题。</p>
-<p>分布式中的死锁问题相比于单机系统要更为复杂，因为一般来说没有一个全局的管理者。</p>
-<p>这个问题过于复杂，后续还需要研究</p>
 
     </div>
 
@@ -245,7 +255,7 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag"># 学习笔记</a>
+              <a href="/tags/%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0/" rel="tag"># 论文笔记</a>
           </div>
 
         
@@ -254,13 +264,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2021/04/08/%E5%88%86%E5%B8%83%E5%BC%8F%E6%97%B6%E9%92%9F%E5%90%8C%E6%AD%A5%E4%B9%8B%E5%B9%B3%E5%9D%87%E7%AE%97%E6%B3%95/" rel="prev" title="分布式时钟同步之平均算法">
-      <i class="fa fa-chevron-left"></i> 分布式时钟同步之平均算法
+    <a href="/2021/06/07/GFS%E7%AC%94%E8%AE%B0/" rel="prev" title="Google三驾马车——GFS">
+      <i class="fa fa-chevron-left"></i> Google三驾马车——GFS
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2021/04/15/%E9%93%BE%E6%8E%A5/" rel="next" title="链接">
-      链接 <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -319,7 +326,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8B%E5%8A%A1%E6%A8%A1%E5%9E%8B"><span class="nav-number">1.</span> <span class="nav-text">事务模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%8B%E5%8A%A1%E7%9A%84%E7%89%B9%E6%80%A7"><span class="nav-number">1.1.</span> <span class="nav-text">事务的特性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6"><span class="nav-number">2.</span> <span class="nav-text">并发控制</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-failure-tolerance"><span class="nav-number">1.</span> <span class="nav-text">为什么需要 failure tolerance</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#failure-tolerance-%E7%9A%84%E6%96%B9%E5%BC%8F"><span class="nav-number">2.</span> <span class="nav-text">failure tolerance 的方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#replicated-state-machine"><span class="nav-number">3.</span> <span class="nav-text">replicated state machine</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E9%99%85%E9%97%AE%E9%A2%98"><span class="nav-number">4.</span> <span class="nav-text">实际问题</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
