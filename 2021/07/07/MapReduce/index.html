@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="MapReduce是Google分布式三驾马车中的一员，我会分析一下MapReduce的设计理念和MIT6.824中Lab1的内容">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Google三驾马车——MapReduce">
+<meta property="og:url" content="http://example.com/2021/07/07/MapReduce/index.html">
+<meta property="og:site_name" content="程序设计入微">
+<meta property="og:description" content="MapReduce是Google分布式三驾马车中的一员，我会分析一下MapReduce的设计理念和MIT6.824中Lab1的内容">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210707152442355.png">
+<meta property="article:published_time" content="2021-07-07T08:16:38.284Z">
+<meta property="article:modified_time" content="2021-07-07T08:13:12.000Z">
+<meta property="article:author" content="Bofan Chen">
+<meta property="article:tag" content="论文笔记">
+<meta property="article:tag" content="实验笔记">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210707152442355.png">
+
+<link rel="canonical" href="http://example.com/2021/07/07/MapReduce/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Google三驾马车——MapReduce | 程序设计入微</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">程序设计入微</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/07/07/MapReduce/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/logo.jpg">
+      <meta itemprop="name" content="Bofan Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="程序设计入微">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Google三驾马车——MapReduce
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-07-07 16:16:38 / 修改时间：16:13:12" itemprop="dateCreated datePublished" datetime="2021-07-07T16:16:38+08:00">2021-07-07</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" itemprop="url" rel="index"><span itemprop="name">分布式</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">MapReduce是Google分布式三驾马车中的一员，我会分析一下MapReduce的设计理念和MIT6.824中Lab1的内容</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="为什么会出现-MapReduce"><a href="#为什么会出现-MapReduce" class="headerlink" title="为什么会出现 MapReduce"></a>为什么会出现 MapReduce</h2><p>同样的，由于数据总量的膨胀，单机性能的瓶颈和性价比使得多机环境更加符合生成需求。然而在多机环境中，如何合理的处理大型数据成为一个重要的研究内容。因此也就出现了 MapReduce。</p>
+<h2 id="系统架构图"><a href="#系统架构图" class="headerlink" title="系统架构图"></a>系统架构图</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210707152442355.png" alt="image-20210707152442355"></p>
+<p>在图中可以看出系统架构主要分为两部分，Master 和 worker。用户程序在 worker 上进行复制，即通过相同的方式处理 Input files 和 Intermediate files。</p>
+<p>Map 步骤的重要特点是将文件内容转化成 &lt;key, value&gt; 的形式，然后将内容根据 key 值存储在不同的文件中。当所有的文件都进行 Map 操作之后，就开始执行 Reduce 任务，即将 Intermdiate files 中的 &lt;key, value&gt; 进行集成统计，产生输出文件。</p>
+<p>理论上来说，这个任务比较简单，即将多个文件分割成更多的文件，每个 worker 只执行其中一部分任务。但是在实际实现的时候却会遇到一些问题。例如单 Master 带来的性能瓶颈问题，还有就是 MapReduce 只能执行简单的任务，当需要实现复杂任务的时候就需要多个 MapReduce 来实现，总的来说，这会导致较大的网络流量，特别是数据量更大的时候。但是 MapReduce 这种编程范式是值得学习的。接下来就谈谈我的实现：</p>
+<h2 id="MapReduce-实现"><a href="#MapReduce-实现" class="headerlink" title="MapReduce 实现"></a>MapReduce 实现</h2><p>可以看出，无论是 Map 或者 Reduce，都是需要处理文件的，并且它们可以看作一个个任务，所以我采用了任务队列的形式，为了简化代码，我将 Map 任务和 Reduce 任务所需要的内容都存放在 task Metadata 中，每个任务的 Metadata 为：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> TaskMetadata <span class="keyword">struct</span> &#123;</span><br><span class="line">	Time			time.Time			<span class="comment">//每个task的起始时间</span></span><br><span class="line">	FileName		<span class="keyword">string</span>				<span class="comment">//task所需要处理的文件名</span></span><br><span class="line">	FileIndex		<span class="keyword">int</span>					<span class="comment">//task所需要处理的文件的index</span></span><br><span class="line">	NReduce			<span class="keyword">int</span>					<span class="comment">//一个map任务生成的Intermediate files个数</span></span><br><span class="line">	ReduceIndex		<span class="keyword">int</span>					<span class="comment">//Intermediate files 的 index</span></span><br><span class="line">	FilesNum		<span class="keyword">int</span>					<span class="comment">//FileName 的个数</span></span><br><span class="line">	NextTask		*TaskMetadata		<span class="comment">//链表的 next task</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我使用了基于链表的任务队列的形式，Master 在启动的时候先生成所有的 Map task，然后把所有的 task 放置到链表上。链表我采用了一个结构体表示：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> TaskList <span class="keyword">struct</span> &#123;</span><br><span class="line">	head	*TaskMetadata</span><br><span class="line">	tail 	*TaskMetadata</span><br><span class="line">	mutex	sync.Mutex</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>mutex 是为了在访问链表的时候保证数据一致性。事实上，我之前在 struct 里面还设置了一个代表长度的 length，但是我不知道为什么维护这个值的时候会出问题，就删除了（</p>
+<p>这个链表支持普通链表所支持的操作，即 Enque()、Deque()、Length()、EnqueSlice()、RemoveTask()。这些功能会在下面介绍</p>
+<p>我在 master 中实现了多个任务队列，mapwaiting、mapruning、reducewaiting、reduceruning：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Master <span class="keyword">struct</span> &#123;</span><br><span class="line"></span><br><span class="line">	FileName		[]<span class="keyword">string</span></span><br><span class="line">	NReduce			<span class="keyword">int</span></span><br><span class="line"></span><br><span class="line">	mapwaiting		*TaskList</span><br><span class="line">	mapruning		*TaskList</span><br><span class="line"></span><br><span class="line">	reducewaiting	*TaskList</span><br><span class="line">	reduceruning	*TaskList</span><br><span class="line">	</span><br><span class="line">	IsDone			<span class="keyword">bool</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在管理 mapwaiting、reducewaiting 的时候可以使用 Enque() 和 Deque() 来实现，但是在 runing 队列里不能使用 Deque() 函数，因为任务完成的顺序不确定，当 worker 完成一个任务的时候，master 要在 runing 里面删除一个特定的元素。</p>
+<p>这就是 master 管理任务的方式，现在要讨论任务的分配和处理方式，即 worker 的工作方式。</p>
+<p>worker 中我实现了四个函数，mapf、reducef、GetTask、FinishTask。</p>
+<p>其中，GetTask 是 worker 向 master 申请任务的方式，这个函数通过 RPC 方式向 master 申请任务，因为 master 的负载不能太大，所以我没有采用 master 分配任务的方式。而是让 worker 申请任务。</p>
+<p>我采用四个状态来表示不同的 task，即 map、reduce、wait、done。wait 是因为没有未执行的任务，但是有任务没有完成。done 是所有任务都已经完成。</p>
+<p>worker 通过 GetTask 向 master 申请任务，通过分析返回值的 State 来判断任务类型来执行不同的函数。</p>
+<p>当任务执行完成之后，worker 通过 FinishTask 函数来通知 master 它已经完成任务，这时，master 再处理任务的状态。</p>
+<p>mapf 和 reducef 函数则是处理 map 和 reduce 任务所采用的函数。具体实现方式就不放在博客讨论了。</p>
+<p>这里就讨论一下我在代码中犯得错误：</p>
+<p>1、我竟然能在单机 master 里实现死锁，也是没谁了。。我在链表的 GetLength() 函数里同样的申请和释放锁，但是一般在调用 GetLength() 函数的函数里也会持有锁，所以就导致了死锁。</p>
+<p>2、我实现的链表有 head 和 tail 两个指针，在处理链表内容的时候，我通常只考虑了 head，而忽略了 tail。导致链表元素数目不对。</p>
+<p><strong>Reference</strong></p>
+<p>MapReduce: Simplified Data Processing  on Large Clusters</p>
+<p>MIT 6.824</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0/" rel="tag"># 论文笔记</a>
+              <a href="/tags/%E5%AE%9E%E9%AA%8C%E7%AC%94%E8%AE%B0/" rel="tag"># 实验笔记</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/06/09/vm-ft%E7%AC%94%E8%AE%B0/" rel="prev" title="Replicated State Machine">
+      <i class="fa fa-chevron-left"></i> Replicated State Machine
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BC%9A%E5%87%BA%E7%8E%B0-MapReduce"><span class="nav-number">1.</span> <span class="nav-text">为什么会出现 MapReduce</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E5%9B%BE"><span class="nav-number">2.</span> <span class="nav-text">系统架构图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MapReduce-%E5%AE%9E%E7%8E%B0"><span class="nav-number">3.</span> <span class="nav-text">MapReduce 实现</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Bofan Chen"
+      src="/images/logo.jpg">
+  <p class="site-author-name" itemprop="name">Bofan Chen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">65</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">63</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Bofan Chen</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
