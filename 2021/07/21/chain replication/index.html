@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="相比于普通的星型拓扑的主从复制，Chain Replication能做出一些不同的事情，特别是针对于scalability的问题。主节点往往是主从系统的瓶颈。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Chain Replication">
+<meta property="og:url" content="http://example.com/2021/07/21/chain%20replication/index.html">
+<meta property="og:site_name" content="程序设计入微">
+<meta property="og:description" content="相比于普通的星型拓扑的主从复制，Chain Replication能做出一些不同的事情，特别是针对于scalability的问题。主节点往往是主从系统的瓶颈。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210720193701.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210720195715.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210720211942.png">
+<meta property="article:published_time" content="2021-07-20T18:05:29.948Z">
+<meta property="article:modified_time" content="2021-07-20T13:31:50.000Z">
+<meta property="article:author" content="Bofan Chen">
+<meta property="article:tag" content="论文笔记">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210720193701.png">
+
+<link rel="canonical" href="http://example.com/2021/07/21/chain%20replication/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Chain Replication | 程序设计入微</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">程序设计入微</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/07/21/chain%20replication/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/logo.jpg">
+      <meta itemprop="name" content="Bofan Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="程序设计入微">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Chain Replication
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-07-21 02:05:29" itemprop="dateCreated datePublished" datetime="2021-07-21T02:05:29+08:00">2021-07-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-07-20 21:31:50" itemprop="dateModified" datetime="2021-07-20T21:31:50+08:00">2021-07-20</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" itemprop="url" rel="index"><span itemprop="name">分布式</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">相比于普通的星型拓扑的主从复制，Chain Replication能做出一些不同的事情，特别是针对于scalability的问题。主节点往往是主从系统的瓶颈。</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>在以往的分布式系统中，往往有一个 Leader 去管理系统，例如 Raft、Paxos 算法，通常会选举一个 Leader 来负责和外界通信并管理 replication。这也就引出了一个巨大的问题，Leader 的性能瓶颈。例如在 Raft 中，Leader 需要和所有的 Follower 通信，以完成 replication 需求。所以有人就研究能不能实现一个有高性能、高吞吐量、高可用的系统，并且能实现线性一致性且没有 Leader 性能要求的方法，也就引发了 Chain Replication 的研究。</p>
+<p>Chain Replication 的基本思路是每个节点只向后续节点进行备份，不存在一个服务器需要和多个服务器通信完成 replication。这样在多极环境下依然能实现高吞吐量。</p>
+<p>论文的第一句话就是 <strong>Chain replication is a new approach to coordinating clusters of fail-stop storage servers.</strong></p>
+<p>有关 fail-stop：<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Fail-stop">Fail-stop - Wikipedia</a></p>
+<h2 id="架构"><a href="#架构" class="headerlink" title="架构"></a>架构</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210720193701.png" alt="image-20210720193700221"></p>
+<p>在图中可以看出 Chain Replication 的架构，一条由不同服务器组成的链，链的头部 Head 接收 updates 请求，Tail 接收 queries 请求。</p>
+<p>在系统中，作者假设存在一个永不失败的 Master，事实上，他们使用 Paxos 或者其它协议来实现一个永不失败的 Master。这个 Master 负责：</p>
+<ul>
+<li>检测服务器的故障</li>
+<li>通知服务器删除它出故障的前置节点或者后置节点</li>
+<li>通知 clients 新的 Head 和 Tail</li>
+</ul>
+<h2 id="理论"><a href="#理论" class="headerlink" title="理论"></a>理论</h2><p>他们给每个对象一个 objID，然后使用两个变量来表示 objID 的状态：</p>
+<ul>
+<li>$Hist_{objID}$: 更新请求序列</li>
+<li>$Pending_{objID}$: 已经收到但 Tail 未执行的序列</li>
+</ul>
+<p>由于 Chain Replication 的特点，如果一个节点 i 在 节点 j 的前面，那么就有：$Hist_{objID}^j \subset Hist_{objID}^i $，因为只有前置节点执行过后才会发送给后置节点，所以存在这种关系。</p>
+<p>他们通过这两个变量定义了三种不会影响线性一致性的处理：</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210720195715.png" alt="image-20210720195714633"></p>
+<p>对于 $Pending_{objID}$，只有在请求到达 Head 或者 Tail 的时候或者 Tail 执行请求后才会变动</p>
+<h2 id="Coping-with-Server-Failures"><a href="#Coping-with-Server-Failures" class="headerlink" title="Coping with Server Failures"></a>Coping with Server Failures</h2><p>对于一个链来说，故障只会在三种地方，Head、Tail、中间节点</p>
+<p>那么接下来就分别讨论这三种错误会不会影响 Update Propagation Invariant。</p>
+<h3 id="Failure-of-the-Head"><a href="#Failure-of-the-Head" class="headerlink" title="Failure of the Head"></a>Failure of the Head</h3><p>如果 Head 节点发生故障，那么就相当于 $Pending_{objID}$ 中删除了那些到达 Head，但是没到达第二个节点的 request，即等于 T2.</p>
+<h3 id="Failure-of-the-Tail"><a href="#Failure-of-the-Tail" class="headerlink" title="Failure of the Tail"></a>Failure of the Tail</h3><p>如果 Tail 节点发生故障，那么根据之前的结论：$Hist_{objID}^T \subset Hist_{objID}^{T-1} $ ，即减少了 $Pending_{objID}$ 中那些倒数第二个节点执行过但 Tail 尚未执行的 request，即 T3</p>
+<h3 id="Failure-of-Other-Servers"><a href="#Failure-of-Other-Servers" class="headerlink" title="Failure of Other Servers"></a>Failure of Other Servers</h3><p>如果中间节点 failure，那么首先可以确定的是，Head 和 Tail 的 $Hist_{objID}$ 和 $Pending_{objID}$ 不会受到影响，接下来分析中间节点 S 两边的节点 S^-^ 和 S^+^ 的影响。</p>
+<p>首先可以确定的是，S 的前/后置节点的 $Hist_{objID}$ 可能是不同的，因为只有前置节点完成 $Hist_{objID}$，后置节点才会更新，所以 S^-^ 需要向 S^+^ 发送那些已经发送给 S，但尚未发送给 S^+^ 的更新。</p>
+<p>为了实现这一点，他们在每个 server 上维护了一个 $Sent_i$ ，代表已经发送给后置节点，但是还未到达 Tail 的 update request，如果到达 Tail 后，Tail 返回一个 Ack 来删除这个 $Sent_i$ 的项。所以有：</p>
+<p>对于任意 i &lt;= j，$Hist_{objID}^i = Hist_{objID}^j \and Sent_i $。</p>
+<p>这样，就  S^-^ 需要向 S^+^ 发送那些  $Sent_{s^-}$ 有的，但 S^+^ 的 $Hist_{objID}^{s^+}$ 没有的内容：</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210720211942.png" alt="image-20210720211941002"></p>
+<ul>
+<li>message 1 告诉 S^+^ 它的前置节点 S failure 了</li>
+<li>message 2 是 S^+^ 告诉 master 它的  $Hist_{objID}^{s^+}$ 的结尾序号</li>
+<li>message 3 是 master 告诉 S^-^ 发送 update request 给 S^+^ ，并且告诉它   $Hist_{objID}^{s^+}$ </li>
+<li>message 4 是 S^-^ 发送  update request</li>
+</ul>
+<h3 id="Extending-a-Chain"><a href="#Extending-a-Chain" class="headerlink" title="Extending a Chain"></a>Extending a Chain</h3><p>扩展 chain 的比较好的方式是在 Tail 扩展。</p>
+<p>延长之后，以前的尾部节点需要同时承担以前 Tail 的责任的同时把 $Hist^T_{objID} $全量复制到 $Hist^{T+}_{objID}$ 。并且这段时间的更新增加到 $Sent_T $，全量复制完成之后，再把 $Sent_T $ 发送给 T^+^ ，然后 master 通知 client 更新 Tail</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>在这篇论文中，首先分享了 Chain Replication 的思想。与 Leader 这种主从复制相比，它的有点在于写的时候会降低 Head 的通信复杂度。采用在知乎用户看到的一篇文章：</p>
+<p><strong><em>如果把备份数定义为m，请求数定义为n，那么对于星型复制，读压力是O(n), 写压力是O(mn)</em></strong></p>
+<p><strong><em>对于链式复制，读写压力都是是O(n），读操作没有均摊开销，其他副本不可读。</em></strong></p>
+<p><strong><em>写操作的latency是O(m)</em></strong></p>
+<p>在我看来，它解决了 scalability 问题，针对节点故障，通过理论证明和 Sent 的设置来实现容错。</p>
+<p><strong>reference</strong></p>
+<ul>
+<li><strong>Chain Replication for Supporting High Throughput and Availability</strong></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/344522347">System|分布式|Chain Replication - 知乎 (zhihu.com)</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0/" rel="tag"># 论文笔记</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/07/07/MapReduce/" rel="prev" title="Google三驾马车——MapReduce">
+      <i class="fa fa-chevron-left"></i> Google三驾马车——MapReduce
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9E%B6%E6%9E%84"><span class="nav-number">2.</span> <span class="nav-text">架构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%90%86%E8%AE%BA"><span class="nav-number">3.</span> <span class="nav-text">理论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Coping-with-Server-Failures"><span class="nav-number">4.</span> <span class="nav-text">Coping with Server Failures</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Failure-of-the-Head"><span class="nav-number">4.1.</span> <span class="nav-text">Failure of the Head</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Failure-of-the-Tail"><span class="nav-number">4.2.</span> <span class="nav-text">Failure of the Tail</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Failure-of-Other-Servers"><span class="nav-number">4.3.</span> <span class="nav-text">Failure of Other Servers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Extending-a-Chain"><span class="nav-number">4.4.</span> <span class="nav-text">Extending a Chain</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Bofan Chen"
+      src="/images/logo.jpg">
+  <p class="site-author-name" itemprop="name">Bofan Chen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">66</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">63</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Bofan Chen</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
