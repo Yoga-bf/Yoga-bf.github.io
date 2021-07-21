@@ -20,24 +20,24 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="为了提高容错，我们会将 server 进行复制。Replicated State Machine 是为了减少带宽消耗所提出的一种复制方法">
+  <meta name="description" content="Zookeeper 作为一种 API，能够实现许多我们的需求，例如名字服务、配置管理、组员管理、互斥锁、读写锁、屏障、数据发布与订阅、master 选举、负载均衡、分布式锁和分布式队列等等。它以特殊的架构实现了许多特殊的功能、例如可在 replication read 的功能。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Replicated State Machine">
-<meta property="og:url" content="http://example.com/2021/06/09/vm-ft%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:title" content="Zookeeper">
+<meta property="og:url" content="http://example.com/2021/07/21/Zookeeper/index.html">
 <meta property="og:site_name" content="程序设计入微">
-<meta property="og:description" content="为了提高容错，我们会将 server 进行复制。Replicated State Machine 是为了减少带宽消耗所提出的一种复制方法">
+<meta property="og:description" content="Zookeeper 作为一种 API，能够实现许多我们的需求，例如名字服务、配置管理、组员管理、互斥锁、读写锁、屏障、数据发布与订阅、master 选举、负载均衡、分布式锁和分布式队列等等。它以特殊的架构实现了许多特殊的功能、例如可在 replication read 的功能。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210609122533.png">
-<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210609124931.png">
-<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210609130505.png">
-<meta property="article:published_time" content="2021-06-09T05:06:58.772Z">
-<meta property="article:modified_time" content="2021-06-09T05:06:40.074Z">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210721170010.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210721171431.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210721171446.png">
+<meta property="article:published_time" content="2021-07-21T14:52:17.647Z">
+<meta property="article:modified_time" content="2021-07-21T09:54:48.000Z">
 <meta property="article:author" content="Bofan Chen">
 <meta property="article:tag" content="论文笔记">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210609122533.png">
+<meta name="twitter:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210721170010.png">
 
-<link rel="canonical" href="http://example.com/2021/06/09/vm-ft%E7%AC%94%E8%AE%B0/">
+<link rel="canonical" href="http://example.com/2021/07/21/Zookeeper/">
 
 
 <script id="page-configurations">
@@ -50,7 +50,7 @@
   };
 </script>
 
-  <title>Replicated State Machine | 程序设计入微</title>
+  <title>Zookeeper | 程序设计入微</title>
   
 
 
@@ -170,7 +170,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/06/09/vm-ft%E7%AC%94%E8%AE%B0/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/07/21/Zookeeper/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/logo.jpg">
@@ -183,7 +183,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Replicated State Machine
+          Zookeeper
         </h1>
 
         <div class="post-meta">
@@ -194,7 +194,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-06-09 13:06:58 / 修改时间：13:06:40" itemprop="dateCreated datePublished" datetime="2021-06-09T13:06:58+08:00">2021-06-09</time>
+              <time title="创建时间：2021-07-21 22:52:17 / 修改时间：17:54:48" itemprop="dateCreated datePublished" datetime="2021-07-21T22:52:17+08:00">2021-07-21</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -211,7 +211,7 @@
             </span>
 
           
-            <div class="post-description">为了提高容错，我们会将 server 进行复制。Replicated State Machine 是为了减少带宽消耗所提出的一种复制方法</div>
+            <div class="post-description">Zookeeper 作为一种 API，能够实现许多我们的需求，例如名字服务、配置管理、组员管理、互斥锁、读写锁、屏障、数据发布与订阅、master 选举、负载均衡、分布式锁和分布式队列等等。它以特殊的架构实现了许多特殊的功能、例如可在 replication read 的功能。</div>
 
         </div>
       </header>
@@ -222,29 +222,42 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="为什么需要-failure-tolerance"><a href="#为什么需要-failure-tolerance" class="headerlink" title="为什么需要 failure tolerance"></a>为什么需要 failure tolerance</h2><p>机器总是会出故障的，无论是网络，硬件抑或是其他。我们不能完全信任一个会出错的机器，所以我们要有一定的容错机制，例如在 GFS 中，master 出错会导致很大的问题，他们使用的是复制 log 的方法，我们这里提出了机器层级上的 failure tolerance</p>
-<h2 id="failure-tolerance-的方式"><a href="#failure-tolerance-的方式" class="headerlink" title="failure tolerance 的方式"></a>failure tolerance 的方式</h2><p>一般来说，容错的机制有两种：</p>
+        <h2 id="什么是-Zookeeper"><a href="#什么是-Zookeeper" class="headerlink" title="什么是 Zookeeper"></a>什么是 Zookeeper</h2><p><em>In this paper, we describe ZooKeeper, a service for coordinating processes of distributed applications.</em></p>
+<h2 id="模型"><a href="#模型" class="headerlink" title="模型"></a>模型</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210721170010.png" alt="image-20210721170009554"></p>
+<p>首先，Zookeeper 拥有分层的命名空间，有两种类型的文件：</p>
 <ul>
-<li>state transfer</li>
-<li>replicated state machine</li>
+<li>Regular：持久性节点，clients 会通过显式的操作来创建或者删除 regular znodes 节点。</li>
+<li>Ephemeral：临时性节点，clents 通过显式的操作创建它们，通过显式的删除操作或者 session 结束之后自动删除。</li>
 </ul>
-<p>state transfer 是将 primary 的所有状态传输给 backup，但是这种方法显然会导致带宽消耗极多</p>
-<p>在论文 “The Design of a Practical System for Fault-Tolerant Virtual Machines” 中，他们采用的 replicated state machine 方法成功的减少了带宽的消耗，同时还能够实现 failure tolerance</p>
-<h2 id="replicated-state-machine"><a href="#replicated-state-machine" class="headerlink" title="replicated state machine"></a>replicated state machine</h2><p>这种方法是将机器建模成状态机，在给定状态和确定性操作的时候，机器的状态是确定的，所以 primary 和 backup 只需要传递状态变化信息就好了</p>
-<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210609122533.png" alt="image-20210609122523648"></p>
-<p>但是这个模型有一个关键问题，即有没有什么操作在 primary 和 backup 上会产生不同的影响？当然，分布式系统的时钟同步问题是一个众所周知的难题，所以 primary 和 backup 上关于时钟的操作一般会不一致。当然，这只是不一致操作的一种。为了解决这个问题，他们把这些不一致操作统统发送给 backup，不但包括命令的内容，还包括这个命令在第几条指令的时候执行，例如时钟中断，在第 100 条指令处执行，这时，backup 的指令的执行情况就和 primary 完全相同。</p>
-<h2 id="实际问题"><a href="#实际问题" class="headerlink" title="实际问题"></a>实际问题</h2><p><em>可以看出，replicated state machine 需要机器的指令以确切的顺序执行，但是现代机器的发展方式是多核的方式，多核引入的一个重要问题就是指令的执行顺序不确定，因此 replicated state machine 只适用于单核的模型，如果是多核的机器，一般是使用 state transfer 的方式。</em></p>
-<p>问题一：backup 的执行速度如果快于 primary 怎么办？<br>通过上述的描述可以发现，backup 的执行速度是绝对不能超过 primary 的，它必须跟着 primary 执行。为了解决这个问题，作者引入了 logging channel ，命令是通过 logging channel 进行传输的，只有 channel 中有数据的时候，backup 才能执行。</p>
-<p>问题二：如果 backup 故障了，要怎么办？<br>一般会通过 state transfer 再构建一个 backup，然后通过 replicated state machine 的方式进行同步</p>
-<p>问题三：primary 是如何保证 backup 会拥有所有操作信息的，即会不会发生 primary 返回给 cilent 信息后出故障，但是 backup 里面没有对这个 client 的操作信息？</p>
-<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210609124931.png" alt="image-20210609124930338"></p>
-<p>可以看出，primary 在接收每个事件后，都会把信息发送给 backup，但是如果是一个 output operation，即 primary 要输出信息给 client，那么就需要 backup 返回给 primary 信息来确认收到后，primary 才能把信息发送给 client。这样，当 primary 出故障后，backup 能够运行到 primary 出故障前的状态，但是不保证只产生一次输出。</p>
-<p>问题四：它是如何防止 spilt-brain 问题的？<br>在这篇文章中，primary 和 backup 默认是使用共享外部磁盘的（Figure 1），即当一个 server 想成为 primary 的时候，它需要对磁盘执行 atomic test-and-set 操作，只有没有 primary 存在的时候这个操作才能成功，因此，系统中只会存在一个 primary。<br>但是如果没有 shared disk 时，例如下图：</p>
-<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210609130505.png" alt="image-20210609130504320"></p>
-<p>就需要一个外部决策者来决定谁是 primary。并且，在 primary 和 backup 启动时，要手动同步两个磁盘的内容，以使得它们内容相同。</p>
-<p>reference</p>
+<p>上面的名词解释：</p>
 <ul>
-<li>The Design of a Practical System for Fault-Tolerant Virtual Machines</li>
+<li>znodes：表示 Zookeeper 的内存数据节点，存放在 data tree 上。</li>
+<li>session：client 通过创建 session 来和 Zookeeper 通信，session 有自己的持续时间，Zookeeper 会将 session 持久化存储，所以在 session 未超时的时间里，clients 可以透明的和不同的 Zookeeper server 通信。</li>
+</ul>
+<p>Zookeeper 里面还实现了 Watcher，例如某个 client 在某个 znode 上设置了 watch 参数，如果这个 znode 发生变动，Watcher 就会通知这个 client，但 watch 的触发是一次性的，即在一个 watch 被设置后，突然发生多次改动，也只会触发一次 watch。</p>
+<p>每个 replica 里都会维护一个 watch table，如果一个 K/V 被更改，它能够通过查找 watch table 来实现</p>
+<h2 id="一致性保证"><a href="#一致性保证" class="headerlink" title="一致性保证"></a>一致性保证</h2><p>Zookeeper 提供了顺序一致性，并不能保证强一致性。</p>
+<p>Zookepper 提供了两个保证：</p>
+<ul>
+<li><strong>Linearizable writes</strong>：all requests that update the state of ZooKeeper are serializable and respect precedence;</li>
+<li><strong>FIFO client order</strong>：all requests from a given client are executed in the order that they were sent by the client.</li>
+</ul>
+<p>但 client 是可以异步提交写请求了，为了保障写请求是按照 client 发送的顺序，可能是在请求里添加了序号。</p>
+<p>然后就是 FIFO client order，因为 client 是可以向 replica 发出 read 的请求，但是如果在 read 之前，client 向 Leader 发送了 write 的请求，那么这个 read 请求就会在 write 请求执行完成之后再执行，并且会通过一定的措施让我一定能在 replica 读到刚刚在 Leader 写入的数据。</p>
+<p>但是对于多 client 来说就会不同，clientA write 一个数据，clientB 在一个 replica read 这个数据，这个数据不一定是最新的，所以 Zookeeper 并没有提供强一致性。</p>
+<p>ZooKeeper is a high performance, scalable service. Both reads and write operations are designed to be fast, though reads are faster than writes. The reason for this is that in the case of reads, ZooKeeper can serve older data, which in turn is due to ZooKeeper’s consistency guarantees: Sequential Consistency Updates from a client will be applied in the order that they were sent.</p>
+<h2 id="API"><a href="#API" class="headerlink" title="API"></a>API</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210721171431.png" alt="image-20210721171429901"></p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210721171446.png" alt="image-20210721171444928"></p>
+<h2 id="使用原语的示例"><a href="#使用原语的示例" class="headerlink" title="使用原语的示例"></a>使用原语的示例</h2><h3 id="配置管理"><a href="#配置管理" class="headerlink" title="配置管理"></a>配置管理</h3><p>leader 通过设置一个文件来表明是否有新的配置，例如通过设置一个文件 ready，如果要更改配置，就先删除 ready，然后写配置文件，当写完后就创建 ready。process 可以在 ready 上设置 watch，这样就能及时的读取新的配置。</p>
+<h3 id="群组"><a href="#群组" class="headerlink" title="群组"></a>群组</h3><p>一个 process 可以在一个 znode1 下创建一个 znode，然后通过 getChildren(znode1, watch) 来找到和它一个群组的成员</p>
+<h3 id="锁"><a href="#锁" class="headerlink" title="锁"></a>锁</h3><p>通过创建一个文件，然后查看是否成功创建来观察自己是否拿到锁。但是如果采用这样的方式会导致惊群效应（thundering herd）的问题，即多个进程争夺一把锁，导致计算机CPU被大量浪费。</p>
+<p>但是它还能实现没有惊群效应的锁，即通过顺序创建文件，并监视只比自己序号小的文件来完成这个操作，这种锁类似于排号锁（Ticket Lock）。</p>
+<p>但是这种锁和普通OS的锁的不同，由于想要获取锁的 process 可能会被 kill，所以当一个 process 被 Watcher 唤醒的时候，需要注意自己的文件前面是否还存在比自己序号更小的文件，如果存在的话就需要等前面的那个文件。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>Zookeeper 的优点在于能够实现在多个 replica 上实现读的功能，这样就较大的减缓了 Leader 的负载，这种同样的思想也出现在 CRAQ 中，这也是我在写 CRAQ 之前写这篇的原因。</p>
+<p>Zookeeper 通过对各种原语来管理自己的文件来实现对 clients 的协同操作。特别是 Watcher 的设置，还有就是 clients 能从 replica 实现读的功能。</p>
+<p><strong>reference</strong></p>
+<ul>
+<li>ZooKeeper: Wait-free coordination for Internet-scale systems</li>
 </ul>
 
     </div>
@@ -264,13 +277,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2021/06/07/GFS%E7%AC%94%E8%AE%B0/" rel="prev" title="Google三驾马车——GFS">
-      <i class="fa fa-chevron-left"></i> Google三驾马车——GFS
+    <a href="/2021/07/21/chain%20replication/" rel="prev" title="Chain Replication">
+      <i class="fa fa-chevron-left"></i> Chain Replication
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2021/07/07/MapReduce/" rel="next" title="Google三驾马车——MapReduce">
-      Google三驾马车——MapReduce <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -329,7 +339,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-failure-tolerance"><span class="nav-number">1.</span> <span class="nav-text">为什么需要 failure tolerance</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#failure-tolerance-%E7%9A%84%E6%96%B9%E5%BC%8F"><span class="nav-number">2.</span> <span class="nav-text">failure tolerance 的方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#replicated-state-machine"><span class="nav-number">3.</span> <span class="nav-text">replicated state machine</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E9%99%85%E9%97%AE%E9%A2%98"><span class="nav-number">4.</span> <span class="nav-text">实际问题</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF-Zookeeper"><span class="nav-number">1.</span> <span class="nav-text">什么是 Zookeeper</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B"><span class="nav-number">2.</span> <span class="nav-text">模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E8%87%B4%E6%80%A7%E4%BF%9D%E8%AF%81"><span class="nav-number">3.</span> <span class="nav-text">一致性保证</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#API"><span class="nav-number">4.</span> <span class="nav-text">API</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E5%8E%9F%E8%AF%AD%E7%9A%84%E7%A4%BA%E4%BE%8B"><span class="nav-number">5.</span> <span class="nav-text">使用原语的示例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E7%AE%A1%E7%90%86"><span class="nav-number">5.1.</span> <span class="nav-text">配置管理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BE%A4%E7%BB%84"><span class="nav-number">5.2.</span> <span class="nav-text">群组</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%94%81"><span class="nav-number">5.3.</span> <span class="nav-text">锁</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
