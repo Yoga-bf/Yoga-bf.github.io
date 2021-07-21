@@ -31,7 +31,7 @@
 <meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210720195715.png">
 <meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210720211942.png">
 <meta property="article:published_time" content="2021-07-20T18:05:29.948Z">
-<meta property="article:modified_time" content="2021-07-21T15:05:44.480Z">
+<meta property="article:modified_time" content="2021-07-21T15:16:24.715Z">
 <meta property="article:author" content="Bofan Chen">
 <meta property="article:tag" content="论文笔记">
 <meta name="twitter:card" content="summary">
@@ -194,7 +194,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-07-21 02:05:29 / 修改时间：23:05:44" itemprop="dateCreated datePublished" datetime="2021-07-21T02:05:29+08:00">2021-07-21</time>
+              <time title="创建时间：2021-07-21 02:05:29 / 修改时间：23:16:24" itemprop="dateCreated datePublished" datetime="2021-07-21T02:05:29+08:00">2021-07-21</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -239,7 +239,7 @@
 <li>$Hist_{objID}$: 更新请求序列</li>
 <li>$Pending_{objID}$: 已经收到但 Tail 未执行的序列</li>
 </ul>
-<p>由于 Chain Replication 的特点，如果一个节点 i 在 节点 j 的前面，那么就有：$Hist_{objID}^j \subset Hist_{objID}^i $，因为只有前置节点执行过后才会发送给后置节点，所以存在这种关系。</p>
+<p>由于 Chain Replication 的特点，如果一个节点 $i$ 在 节点 $j$ 的前面，那么就有：$Hist_{objID}^j \subset Hist_{objID}^i $，因为只有前置节点执行过后才会发送给后置节点，所以存在这种关系。</p>
 <p>他们通过这两个变量定义了三种不会影响线性一致性的处理：</p>
 <p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210720195715.png" alt="image-20210720195714633"></p>
 <p>对于 $Pending_{objID}$，只有在请求到达 Head 或者 Tail 的时候或者 Tail 执行请求后才会变动</p>
@@ -247,20 +247,20 @@
 <p>那么接下来就分别讨论这三种错误会不会影响 Update Propagation Invariant。</p>
 <h3 id="Failure-of-the-Head"><a href="#Failure-of-the-Head" class="headerlink" title="Failure of the Head"></a>Failure of the Head</h3><p>如果 Head 节点发生故障，那么就相当于 $Pending_{objID}$ 中删除了那些到达 Head，但是没到达第二个节点的 request，即等于 T2.</p>
 <h3 id="Failure-of-the-Tail"><a href="#Failure-of-the-Tail" class="headerlink" title="Failure of the Tail"></a>Failure of the Tail</h3><p>如果 Tail 节点发生故障，那么根据之前的结论：$Hist_{objID}^T \subset Hist_{objID}^{T-1} $ ，即减少了 $Pending_{objID}$ 中那些倒数第二个节点执行过但 Tail 尚未执行的 request，即 T3</p>
-<h3 id="Failure-of-Other-Servers"><a href="#Failure-of-Other-Servers" class="headerlink" title="Failure of Other Servers"></a>Failure of Other Servers</h3><p>如果中间节点 failure，那么首先可以确定的是，Head 和 Tail 的 $Hist_{objID}$ 和 $Pending_{objID}$ 不会受到影响，接下来分析中间节点 S 两边的节点 S^-^ 和 S^+^ 的影响。</p>
-<p>首先可以确定的是，S 的前/后置节点的 $Hist_{objID}$ 可能是不同的，因为只有前置节点完成 $Hist_{objID}$，后置节点才会更新，所以 S^-^ 需要向 S^+^ 发送那些已经发送给 S，但尚未发送给 S^+^ 的更新。</p>
+<h3 id="Failure-of-Other-Servers"><a href="#Failure-of-Other-Servers" class="headerlink" title="Failure of Other Servers"></a>Failure of Other Servers</h3><p>如果中间节点 failure，那么首先可以确定的是，Head 和 Tail 的 $Hist_{objID}$ 和 $Pending_{objID}$ 不会受到影响，接下来分析中间节点 $S$ 两边的节点 $S^-$ 和 $S^+$ 的影响。</p>
+<p>首先可以确定的是，$S$ 的前/后置节点的 $Hist_{objID}$ 可能是不同的，因为只有前置节点完成 $Hist_{objID}$，后置节点才会更新，所以 $S^-$ 需要向 $S^+$ 发送那些已经发送给 $S$，但尚未发送给 $S^+$ 的更新。</p>
 <p>为了实现这一点，他们在每个 server 上维护了一个 $Sent_i$ ，代表已经发送给后置节点，但是还未到达 Tail 的 update request，如果到达 Tail 后，Tail 返回一个 Ack 来删除这个 $Sent_i$ 的项。所以有：</p>
 <p>对于任意 i &lt;= j，$Hist_{objID}^i = Hist_{objID}^j \and Sent_i $。</p>
-<p>这样，就  S^-^ 需要向 S^+^ 发送那些  $Sent_{s^-}$ 有的，但 S^+^ 的 $Hist_{objID}^{s^+}$ 没有的内容：</p>
+<p>这样，就  $S^-$ 需要向 $S^+$ 发送那些  $Sent_{s^{-}}$有的，但 $S^+$ 的 $Hist_{objID}^{s^+}$ 没有的内容：</p>
 <p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210720211942.png" alt="image-20210720211941002"></p>
 <ul>
-<li>message 1 告诉 S^+^ 它的前置节点 S failure 了</li>
-<li>message 2 是 S^+^ 告诉 master 它的  $Hist_{objID}^{s^+}$ 的结尾序号</li>
-<li>message 3 是 master 告诉 S^-^ 发送 update request 给 S^+^ ，并且告诉它   $Hist_{objID}^{s^+}$ </li>
-<li>message 4 是 S^-^ 发送  update request</li>
+<li>message 1 告诉 $S^+$ 它的前置节点 $S$ failure 了</li>
+<li>message 2 是 $S^+$ 告诉 master 它的  $Hist_{objID}^{s^+}$ 的结尾序号</li>
+<li>message 3 是 master 告诉 $S^-$ 发送 update request 给 $S^+$ ，并且告诉它   $Hist_{objID}^{s^+}$ </li>
+<li>message 4 是 $S^-$ 发送  update request</li>
 </ul>
 <h3 id="Extending-a-Chain"><a href="#Extending-a-Chain" class="headerlink" title="Extending a Chain"></a>Extending a Chain</h3><p>扩展 chain 的比较好的方式是在 Tail 扩展。</p>
-<p>延长之后，以前的尾部节点需要同时承担以前 Tail 的责任的同时把 $Hist^T_{objID} $全量复制到 $Hist^{T+}_{objID}$ 。并且这段时间的更新增加到 $Sent_T $，全量复制完成之后，再把 $Sent_T $ 发送给 T^+^ ，然后 master 通知 client 更新 Tail</p>
+<p>延长之后，以前的尾部节点需要同时承担以前 Tail 的责任的同时把 $Hist^T_{objID} $全量复制到 $Hist^{T+}_{objID}$ 。并且这段时间的更新增加到 $Sent_T $，全量复制完成之后，再把 $Sent_T $ 发送给 $T^+$ ，然后 master 通知 client 更新 Tail</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>在这篇论文中，首先分享了 Chain Replication 的思想。与 Leader 这种主从复制相比，它的有点在于写的时候会降低 Head 的通信复杂度。采用在知乎用户看到的一篇文章：</p>
 <p><strong><em>如果把备份数定义为m，请求数定义为n，那么对于星型复制，读压力是O(n), 写压力是O(mn)</em></strong></p>
 <p><strong><em>对于链式复制，读写压力都是是O(n），读操作没有均摊开销，其他副本不可读。</em></strong></p>
