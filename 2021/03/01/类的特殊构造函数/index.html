@@ -266,8 +266,6 @@
 </ul>
 <p>复制构造函数：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">StringBad::StringBad(<span class="keyword">const</span> StringBad &amp; st)</span><br><span class="line">&#123;</span><br><span class="line">	num_strings++;</span><br><span class="line">	len = st.len;</span><br><span class="line">	str = <span class="keyword">new</span> <span class="keyword">char</span> [len + <span class="number">1</span>];</span><br><span class="line">	<span class="built_in">std</span>::<span class="built_in">strcpy</span>(str, st.str);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
 <h4 id="赋值运算符"><a href="#赋值运算符" class="headerlink" title="赋值运算符"></a>赋值运算符</h4><p>C++的类会自动重载赋值运算符；</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Class_name &amp; Class_name::<span class="keyword">operator</span>=(<span class="keyword">const</span> Class_name &amp;);</span><br></pre></td></tr></table></figure>
 <p>在程序中：</p>

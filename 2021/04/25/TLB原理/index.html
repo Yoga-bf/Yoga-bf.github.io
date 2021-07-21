@@ -227,7 +227,7 @@
       
         <h2 id="什么是-TLB"><a href="#什么是-TLB" class="headerlink" title="什么是 TLB"></a>什么是 TLB</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210425140944826.png" alt="image-20210425140944826"></p>
 <p>MMU根据页表基地址寄存器从PGD页表一路查到PTE页表，最终找到物理地址。</p>
-<p>同样的，类比于 cache 相对于 memory，TLB 也是一种高速缓存，同样的，TLB 也可能存在别名和歧义问题。<a target="_blank" rel="noopener" href="http://yogacbf.com/2021/04/25/Cache%E6%A8%A1%E5%9E%8B/">Cache模型</a></p>
+<p>同样的，类比于 cache 相对于 memory，TLB 也是一种高速缓存，同样的，TLB 也可能存在别名和歧义问题。<a target="_blank" rel="noopener" href="http://yogacbf.com/2021/04/25/Cache模型/">Cache模型</a></p>
 <h2 id="别名问题"><a href="#别名问题" class="headerlink" title="别名问题"></a>别名问题</h2><p>因为在这里，不同的虚拟地址映射到相同物理地址是可以的。即，一个物理地址映射到多个虚拟地址，一个虚拟地址仅仅映射到一个物理地址，这里仅仅进行地址转换，所以不存在别名问题。</p>
 <h2 id="歧义问题"><a href="#歧义问题" class="headerlink" title="歧义问题"></a>歧义问题</h2><p>显然，不同进程的虚拟地址范围是一样的，所以 TLB 缓存的内容会有歧义问题。即A进程的虚拟地址映射到的物理地址和B进程不同，如果不采取措施，A进程可能会尝试访问B进程的内容。</p>
 <p>同样的，我们可以采用 flush TLB 的方法来解决这个问题，但是这样同样会导致性能损失。</p>

@@ -249,8 +249,6 @@
 <li>具体化优先于常规模板，而非模板函数优先于具体化和常规模板</li>
 </ul>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">Swap</span><span class="params">(job &amp;, job &amp;)</span></span>; </span><br><span class="line"><span class="comment">//非模板函数</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">Swap</span><span class="params">(T &amp;, T &amp;)</span></span>;</span><br><span class="line"><span class="comment">//模板函数</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;&gt; <span class="keyword">void</span> Swap&lt;job&gt;(job &amp;, job &amp;);</span><br><span class="line"><span class="comment">//显式具体化</span></span><br></pre></td></tr></table></figure>
-
-
 <h2 id="实例化和具体化"><a href="#实例化和具体化" class="headerlink" title="实例化和具体化"></a>实例化和具体化</h2><p>实例化是将模板变成函数定义实例</p>
 <p>隐式实例化、显式实例化和显式具体化统称为具体化</p>
 <p>隐式实例化：</p>

@@ -244,9 +244,9 @@
 <li>宁可用 C++ -style（新式）转型，不要使用旧式转型。前者很容易辨别出来，而且也比较有着分门别类的执掌。</li>
 </ul>
 <p>C++ 的四种新式转型：</p>
-<p>const_cast&lt;T&gt; (expression)<br>dynamic_cast&lt;T&gt; (expression)<br>reinterpret_cast&lt;T&gt; (expression)<br>static_cast&lt;T&gt; (expression)</p>
+<p>const_cast\<T> (expression)<br>dynamic_cast\<T> (expression)<br>reinterpret_cast\<T> (expression)<br>static_cast\<T> (expression)</p>
 <p>T为新类型，它们的具体定义查看 CPP 网站</p>
-<p>注意 dynamic_cast&lt;T&gt; (expression) 可能会导致比较大的运行成本</p>
+<p>注意 dynamic_cast\<T> (expression) 可能会导致比较大的运行成本</p>
 <h2 id="避免返回-handles-指向对象内部成分"><a href="#避免返回-handles-指向对象内部成分" class="headerlink" title="避免返回 handles 指向对象内部成分"></a>避免返回 handles 指向对象内部成分</h2><ul>
 <li>避免返回 handles（包括 references、指针、迭代器）指向对象内部。遵守这个条款能够增加封装性，帮助 const 成员函数的行为像个 const，并将发生 “虚吊号码牌”（dangling handles）的可能性降至最低。</li>
 </ul>

@@ -232,7 +232,8 @@
 <p>在操作系统和应用程序之间的接口处，应用程序可以创建子进程，等待它们的子进程停止或者中止，运行新的程序，以及捕获来自其它进程的信号。</p>
 <p>最后，在应用层，C程序可以使用非本地跳转来规避正常的调用/返回栈规则，并且直接从一个函数分支到另一个函数。</p>
 <h2 id="异常"><a href="#异常" class="headerlink" title="异常"></a>异常</h2><p>异常是异常控制流的一种形式，它一部分由硬件实现，一部分由操作系统实现。</p>
-<h3 id="异常分类"><a href="#异常分类" class="headerlink" title="异常分类"></a>异常分类</h3><table>
+<h3 id="异常分类"><a href="#异常分类" class="headerlink" title="异常分类"></a>异常分类</h3><div class="table-container">
+<table>
 <thead>
 <tr>
 <th>类别</th>
@@ -241,7 +242,8 @@
 <th>返回行为</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>中断 (interrupt)</td>
 <td>I/O设备的信号</td>
 <td>异步</td>
@@ -265,7 +267,9 @@
 <td>同步</td>
 <td>不会返回</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
+</div>
 <p>其中，陷阱最重要的用途是在用户程序和内核之间提供一个像过程一样的接口。</p>
 <p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210415232558.png" alt="image-20210415232557647"></p>
 <h2 id="进程"><a href="#进程" class="headerlink" title="进程"></a>进程</h2><p>异常是允许操作系统内核提供进程概念的基本构造块。</p>

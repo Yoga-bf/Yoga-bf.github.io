@@ -276,19 +276,19 @@
 <p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210517200653384.png" alt="image-20210517200653384"></p>
 <p>如上图，如果 B 需要一个指针指向 A，那么如果使用 shared_ptr ，就会阻止A和B被析构，导致内存泄漏。</p>
 <h2 id="如何创建指针"><a href="#如何创建指针" class="headerlink" title="如何创建指针"></a>如何创建指针</h2><p>按照现代C++的观点，我们应该优先选用 std::make_unique, std::make_shared, std::allocate_shared 创建指针，而非 new，这是因为我们尽量做到异常安全和加快程序运行速度。</p>
-<p>事实上，我们在Effective C++里面就讨论过异常安全的问题<a target="_blank" rel="noopener" href="http://yogacbf.com/2021/03/01/%E8%B5%84%E6%BA%90%E7%AE%A1%E7%90%86/">资源管理</a>，我们在这里要求使用 make 系列的函数创建指针也是出于同样的考虑：</p>
+<p>事实上，我们在Effective C++里面就讨论过异常安全的问题<a target="_blank" rel="noopener" href="http://yogacbf.com/2021/03/01/资源管理/">资源管理</a>，我们在这里要求使用 make 系列的函数创建指针也是出于同样的考虑：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">processWidget</span><span class="params">(<span class="built_in">std</span>::<span class="built_in">shared_ptr</span>&lt;Widget&gt; pw1, <span class="keyword">int</span> priority)</span></span>;</span><br><span class="line">processWidget(<span class="built_in">std</span>::<span class="built_in">shared_ptr</span>&lt;Widget&gt;(<span class="keyword">new</span> Widget), computePriority());</span><br></pre></td></tr></table></figure>
 <p>在这里，编译器同样会做一些优化，但是三个事情必须在调用 processWidget 之前完成：</p>
 <ul>
 <li>表达式 new Widget 必须完成评估求职，即一个 Widget 对象必须先在堆上创建</li>
-<li>由 new 产生的裸指针的托管对象 std::shared_ptr&lt;Widget&gt; 的构造函数必须执行</li>
+<li>由 new 产生的裸指针的托管对象 std::shared_ptr\<Widget> 的构造函数必须执行</li>
 <li>computePriority 必须执行</li>
 </ul>
 <p>但是执行的顺序是不确定的，虽然1必须在2前面，但是3的位置不确定，有可能在堆上创建对象 Widget 之后，3 出错，那就会导致内存泄漏，但是，如果这里使用 make 系列的函数：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">processWidget(<span class="built_in">std</span>::make_shared&lt;Widget&gt;(), computePriority());</span><br></pre></td></tr></table></figure>
 <p>这样就不会存在这种风险。</p>
 <p>而且 make 系列的函数效率也比通过 new 创建裸指针然后构造 shared_ptr 效率高。因为通过 new 只会创建对象的内存块，控制块还需要在构造函数中生成，但是如果使用 make 系列的函数，那么就只需要一次申请内存块，显然是有好处的。</p>
-<p>但是当要使用定制删除器的时候，我们就要不得不使用 new 表达式了，这时候要处理资源泄露问题，就要通过<a target="_blank" rel="noopener" href="http://yogacbf.com/2021/03/01/%E8%B5%84%E6%BA%90%E7%AE%A1%E7%90%86/">资源管理</a>第四节介绍的方法了。</p>
+<p>但是当要使用定制删除器的时候，我们就要不得不使用 new 表达式了，这时候要处理资源泄露问题，就要通过<a target="_blank" rel="noopener" href="http://yogacbf.com/2021/03/01/资源管理/">资源管理</a>第四节介绍的方法了。</p>
 <p>但是这里有一个小问题，可以看出，在 processWidget 函数里，实参不是以指针或引用传递的，那么就是传递的右值，而通过Effective的方法生成的代码如下：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="built_in">std</span>::<span class="built_in">shared_ptr</span>&lt;Widget&gt; <span class="title">spw</span><span class="params">(<span class="keyword">new</span> Widget, cusDel)</span></span>;</span><br><span class="line">processWidget(spw, computePriority());</span><br></pre></td></tr></table></figure>
 <p>这里，spw 是一个左值，如果要传递到 processWidget 函数里，那么还需要一个复制，所以我们可以这么做：</p>

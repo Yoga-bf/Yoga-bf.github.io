@@ -253,11 +253,11 @@
 </ul>
 </li>
 </ul>
-<h3 id="设备模拟-1"><a href="#设备模拟-1" class="headerlink" title="设备模拟"></a>设备模拟</h3><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/Snipaste_2021-03-01_15-34-40.jpg"></p>
+<h3 id="设备模拟-1"><a href="#设备模拟-1" class="headerlink" title="设备模拟"></a>设备模拟</h3><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/Snipaste_2021-03-01_15-34-40.jpg" alt=""></p>
 <p>VM 首先通过自己的内核网络协议栈构造出数据包，然后通过驱动发送出去。<br>驱动的终端被硬件虚拟化捕捉，然后发送给KVM，KVM把这个消息发送给QEMU，QEMU读取VM内存中的数据包信息，通过system call将数据包通过真实的网卡发送出去</p>
 <p>设备模拟的时候，需要模拟具体的网卡类型与驱动，实现麻烦，而且每次请求都要这样走一遍</p>
 <h3 id="半虚拟化"><a href="#半虚拟化" class="headerlink" title="半虚拟化"></a>半虚拟化</h3><p>将 VM 与 VMM 打通——Virtqueue（VM 和 VMM 之间传递 I/O 请求的队列）</p>
-<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/Snipaste_2021-03-01_15-42-29.jpg"></p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/Snipaste_2021-03-01_15-42-29.jpg" alt=""></p>
 <p>VM 的驱动直接发送一个请求给 Back-end Driver，不用模拟设备。</p>
 <h3 id="设备直通"><a href="#设备直通" class="headerlink" title="设备直通"></a>设备直通</h3><p>如果直接使用设备直通，那么任何一个虚拟机都可以通过 DMA 修改别的内存的内容，不安全，所以就使用 IOMMU 来完成页表映射，对于不安全的内存访问报 error。</p>
 <h2 id="中断虚拟化"><a href="#中断虚拟化" class="headerlink" title="中断虚拟化"></a>中断虚拟化</h2><ul>
@@ -277,7 +277,7 @@
 </li>
 </ul>
 <p>GIC ITS 是不打断虚拟机执行的中断</p>
-<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/Snipaste_2021-03-01_15-50-17.jpg"></p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/Snipaste_2021-03-01_15-50-17.jpg" alt=""></p>
 <p>可以看出 v4 里面就不需要 VMM 参与，即将物理中断映射到虚拟中断，发送给虚拟CPU。</p>
 
     </div>

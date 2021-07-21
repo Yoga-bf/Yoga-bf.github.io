@@ -228,7 +228,8 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <table>
+        <div class="table-container">
+<table>
 <thead>
 <tr>
 <th>特征</th>
@@ -237,7 +238,8 @@
 <th>私有继承</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>公有成员变成</td>
 <td>派生类的公有成员</td>
 <td>~的保护成员</td>
@@ -261,7 +263,9 @@
 <td>是(只能在~中)</td>
 <td>否</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
+</div>
 <p>所以使用私有继承的时候可以实现 has-a 的模式，包含也能实现。但是包含和私有继承在成员的实现方式上有些不同。</p>
 <p>公有继承实现 is-a 模式。</p>
 

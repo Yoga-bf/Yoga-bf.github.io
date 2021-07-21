@@ -247,7 +247,7 @@
 <p>使用作用域解析运算符可以访问基类的方法，如果要使用基类对象本身，需要进行强制类型转换。</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">const</span> <span class="built_in">string</span> &amp; <span class="title">Student::Name</span><span class="params">()</span> <span class="keyword">const</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">return</span> (<span class="keyword">const</span> <span class="built_in">string</span> &amp;) *<span class="keyword">this</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>在私有继承中，在不进行显示类型转换的情况下，不能将指向派生类的引用或指针赋给基类引用或指针。</p>
-<h3 id="使用-using-重新定义访问权限"><a href="#使用-using-重新定义访问权限" class="headerlink" title="使用 using 重新定义访问权限"></a>使用 using 重新定义访问权限</h3><p>using std::valarray&lt;double&gt;::min</p>
+<h3 id="使用-using-重新定义访问权限"><a href="#使用-using-重新定义访问权限" class="headerlink" title="使用 using 重新定义访问权限"></a>使用 using 重新定义访问权限</h3><p>using std::valarray\<double>::min</p>
 
     </div>
 

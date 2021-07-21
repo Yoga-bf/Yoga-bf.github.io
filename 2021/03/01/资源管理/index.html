@@ -253,15 +253,12 @@
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Lock</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="function"><span class="keyword">explicit</span> <span class="title">Lock</span><span class="params">(Mutex* pm)</span></span></span><br><span class="line"><span class="function">		: <span class="title">mutexPtr</span><span class="params">(pm, unlock)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		lock(mutexPtr.get());</span><br><span class="line">	&#125;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">	<span class="built_in">std</span>::trl::<span class="built_in">shared_ptr</span>&lt;Mutex&gt; mutexPtr;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>这样当引用计数为 0 时，就调用 unlock 函数。（这个函数的参数怎么确定）</p>
 <h2 id="在资源管理类中提供对原始资源的访问"><a href="#在资源管理类中提供对原始资源的访问" class="headerlink" title="在资源管理类中提供对原始资源的访问"></a>在资源管理类中提供对原始资源的访问</h2><ul>
-<li><p>APIs 往往要求访问原始资源，所以每一个 RAII class 应该提供一个“取得其所管理之资源”的方法。</p>
-</li>
+<li>APIs 往往要求访问原始资源，所以每一个 RAII class 应该提供一个“取得其所管理之资源”的方法。</li>
 <li><p>对原始资源的访问可能经由显示转换或隐式转换。一般而言显示转换比较安全，但隐式转换对客户比较方便。</p>
 <p>trl::shared_ptr 和 auto_ptr 都提供一个 get 成员函数，用来执行显示转换，也就是它会返回智能指针内部的原始指针。</p>
 </li>
 </ul>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="built_in">std</span>::<span class="built_in">auto_ptr</span>&lt;Investment&gt; <span class="title">pInv</span><span class="params">(createInvestment())</span></span>;</span><br><span class="line">pInv.get() 返回一个指向 Investment 的 Investment 的指针</span><br></pre></td></tr></table></figure>
-
-
 <h2 id="以独立语句将-newed-对象置入智能指针"><a href="#以独立语句将-newed-对象置入智能指针" class="headerlink" title="以独立语句将 newed 对象置入智能指针"></a>以独立语句将 newed 对象置入智能指针</h2><ul>
 <li>以独立语句将 newed 对象存储于（置入）智能指针内。如果不这样做，一旦异常被抛出，有可能导致难以察觉的资源泄露。</li>
 </ul>

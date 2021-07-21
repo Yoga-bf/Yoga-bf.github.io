@@ -244,7 +244,7 @@
 <p>经过计算之后，要把本进程的时间修改为收集到的时间，但是我这里没有修改系统时间，而是根据 ave_time 与 my_time 的差值决定 sleep 的时间：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sleep_time = R + ave_time - my_time;</span><br></pre></td></tr></table></figure>
 <p>所以，当 ave_time 大于 my_time，即本进程的时间过早，那么它就会 sleep 更长的时间，这样，就能大致达到均衡各个进程时间的功能。</p>
-<h2 id="结果分析："><a href="#结果分析：" class="headerlink" title="结果分析："></a>结果分析：</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/%E8%BF%90%E8%A1%8C%E7%BB%93%E6%9E%9C%E5%9B%BE.png"></p>
+<h2 id="结果分析："><a href="#结果分析：" class="headerlink" title="结果分析："></a>结果分析：</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/%E8%BF%90%E8%A1%8C%E7%BB%93%E6%9E%9C%E5%9B%BE.png" alt=""></p>
 <p>最上面两行命令分别是编译和运行，其中，第二行的数字 6 代表机器的数目。</p>
 <p>在上图中，每一行开始的数字代表机器编号，后面的 “machine id time is” 是每个机器的时间值，可见在每个机器中，它们收集到的值是相同的。</p>
 <p>最后一行的 avetime 是每个机器计算的平均时间，这是它的结果。可见，代码能够实现每个机器的 ave_time 都相同，且能根据自己的时间与 ave_time 的时间设置不同的 sleep 时间，实现调整时间的效果。</p>

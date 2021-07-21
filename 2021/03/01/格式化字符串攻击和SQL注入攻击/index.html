@@ -239,6 +239,7 @@
 <p>执行下面的语句：</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">printf</span>(<span class="string">&quot;A is %d and is at %08x, B is %u and is at %08x.\n&quot;</span>, A, &amp;A, B, &amp;B);</span><br></pre></td></tr></table></figure>
 <p>首先将参数逆序 push 到堆栈中，堆栈的内容如下所示：</p>
+<div class="table-container">
 <table>
 <thead>
 <tr>
@@ -252,7 +253,8 @@
 <th>栈顶高地址</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td></td>
 <td>格式化串的地址</td>
 <td>A</td>
@@ -260,9 +262,10 @@
 <td>B</td>
 <td>&amp;B</td>
 <td>…</td>
-<td></td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
+</div>
 <p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210222132938.png" alt="image-20210102185941079"></p>
 <p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210222132932.png" alt="image-20210102185951856"></p>
 <p>printf 函数一次遍历格式化字符串，如果该字符不是格式化参数则复制该字符，如果遇到格式化参数，则采取相应的动作，用当前栈的内容替换该格式化参数(<strong>如果是%s，则拷贝相应的字符串</strong>)</p>

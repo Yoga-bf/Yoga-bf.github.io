@@ -226,16 +226,16 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="操作系统的接口层次"><a href="#操作系统的接口层次" class="headerlink" title="操作系统的接口层次"></a>操作系统的接口层次</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/Snipaste_2021-03-01_10-32-46.jpg"></p>
+        <h2 id="操作系统的接口层次"><a href="#操作系统的接口层次" class="headerlink" title="操作系统的接口层次"></a>操作系统的接口层次</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/Snipaste_2021-03-01_10-32-46.jpg" alt=""></p>
 <p>在上图可以看出，操作系统并不是仅仅包裹着硬件，应用也是能够直接作用于硬件。</p>
 <p>ISA 提供了操作系统与硬件之间的界限</p>
 <h2 id="虚拟机监控器（VMM-Hypervisor"><a href="#虚拟机监控器（VMM-Hypervisor" class="headerlink" title="虚拟机监控器（VMM/Hypervisor)"></a>虚拟机监控器（VMM/Hypervisor)</h2><ul>
 <li>向上层虚拟机暴露其所需要的ISA</li>
 <li>可同时运行多台虚拟机（VM）</li>
 </ul>
-<h2 id="虚拟机监控器分类"><a href="#虚拟机监控器分类" class="headerlink" title="虚拟机监控器分类"></a>虚拟机监控器分类</h2><h3 id="Type-1"><a href="#Type-1" class="headerlink" title="Type 1"></a>Type 1</h3><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/Snipaste_2021-03-01_10-40-37.jpg"></p>
+<h2 id="虚拟机监控器分类"><a href="#虚拟机监控器分类" class="headerlink" title="虚拟机监控器分类"></a>虚拟机监控器分类</h2><h3 id="Type-1"><a href="#Type-1" class="headerlink" title="Type 1"></a>Type 1</h3><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/Snipaste_2021-03-01_10-40-37.jpg" alt=""></p>
 <p>直接运行在硬件上，充当操作系统的角色，直接管理所有物理资源，性能损失较少</p>
-<h3 id="Type-2"><a href="#Type-2" class="headerlink" title="Type 2"></a>Type 2</h3><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/Snipaste_2021-03-01_10-42-16.jpg"></p>
+<h3 id="Type-2"><a href="#Type-2" class="headerlink" title="Type 2"></a>Type 2</h3><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/Snipaste_2021-03-01_10-42-16.jpg" alt=""></p>
 <p>依托于主机操作系统，主机操作系统管理物理资源，虚拟机监控器以进程/内核模块的形态运行，易于安装和实现</p>
 <p>例如 QEMU/KVM</p>
 <h2 id="系统虚拟化流程"><a href="#系统虚拟化流程" class="headerlink" title="系统虚拟化流程"></a>系统虚拟化流程</h2><h3 id="第一步"><a href="#第一步" class="headerlink" title="第一步"></a>第一步</h3><p>捕捉所有系统 ISA 并陷入（Trap）</p>

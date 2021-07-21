@@ -239,10 +239,10 @@
 
       
         <h2 id="基于INODE的文件系统"><a href="#基于INODE的文件系统" class="headerlink" title="基于INODE的文件系统"></a>基于INODE的文件系统</h2><p>Ext2存储布局：</p>
-<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210224002227.jpg"></p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210224002227.jpg" alt=""></p>
 <p>磁盘被分为多个块组，每个块组中都有超级块，互为备份。超级块记录了整个文件系统的元数据，块组描述表记录了块组中各个区域的位置和大小。</p>
 <p>在Ext2的<strong>常规文件</strong>中，inode分布如下：</p>
-<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210224005038.jpg"></p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210224005038.jpg" alt=""></p>
 <p>在<strong>目录文件</strong>中，内容为一组目录项的特殊文件。</p>
 <p>目录项：</p>
 <ul>
@@ -252,13 +252,11 @@
 </ul>
 <p>目录项结构：</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">ext2_dir_entry</span> &#123;</span></span><br><span class="line">	__le32 inode;			<span class="comment">/* Inode号 */</span></span><br><span class="line">	__le16 rec_len;			<span class="comment">/* 目录项长度 */</span></span><br><span class="line">	__le16 name_len;		<span class="comment">/* 文件名长度 */</span></span><br><span class="line">	<span class="keyword">char</span>   name[];			<span class="comment">/* 文件名 */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
 <h3 id="软链接"><a href="#软链接" class="headerlink" title="软链接"></a>软链接</h3><p>内容为一个路径的特殊文件</p>
 <p>查找文件时会跳到目标路径</p>
-<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210224005611.jpg"></p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210224005611.jpg" alt=""></p>
 <h3 id="硬链接"><a href="#硬链接" class="headerlink" title="硬链接"></a>硬链接</h3><p>不是一种文件，创建硬链接增加一个指向现有 inode 的目录项</p>
-<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210224005725.jpg"></p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210224005725.jpg" alt=""></p>
 <h3 id="其它文件类型"><a href="#其它文件类型" class="headerlink" title="其它文件类型"></a>其它文件类型</h3><ul>
 <li>字符/块设备文件<ul>
 <li>主要记录设备的 Major 和 Minor 号</li>
@@ -277,7 +275,7 @@
 </ul>
 <p>由于这个存储方式在存储大文件时，会导致头部信息过多，影响硬盘可用存储，所以用区段树来优化</p>
 <p>区段是由物理上连续的多个数据块组成，只要保存起始块地址和长度即可。</p>
-<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210224010137.jpg"></p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210224010137.jpg" alt=""></p>
 <h2 id="基于INODE文件系统的基本操作"><a href="#基于INODE文件系统的基本操作" class="headerlink" title="基于INODE文件系统的基本操作"></a>基于INODE文件系统的基本操作</h2><p>查找就按照目录来一级一级查找</p>
 <h3 id="打开和读写文件"><a href="#打开和读写文件" class="headerlink" title="打开和读写文件"></a>打开和读写文件</h3><ul>
 <li>打开文件<ul>
@@ -312,12 +310,12 @@
 <li>访问的局部性</li>
 <li>可以用 madvice 为内核提供访问提示，提高性能</li>
 </ul>
-<h2 id="基于TABLE的文件系统"><a href="#基于TABLE的文件系统" class="headerlink" title="基于TABLE的文件系统"></a>基于TABLE的文件系统</h2><h3 id="FAT32"><a href="#FAT32" class="headerlink" title="FAT32"></a>FAT32</h3><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210224141203.jpg"></p>
+<h2 id="基于TABLE的文件系统"><a href="#基于TABLE的文件系统" class="headerlink" title="基于TABLE的文件系统"></a>基于TABLE的文件系统</h2><h3 id="FAT32"><a href="#FAT32" class="headerlink" title="FAT32"></a>FAT32</h3><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210224141203.jpg" alt=""></p>
 <p>FAT为每个数据簇增加了一个next指针，让簇可以串联在一起</p>
-<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210224141249.jpg"></p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210224141249.jpg" alt=""></p>
 <p>因为在 FAT32 中，描述文件大小的位数是4个字节，所以 FAT32 文件不能大于 4G</p>
-<h3 id="NTFS"><a href="#NTFS" class="headerlink" title="NTFS"></a>NTFS</h3><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210224142031.jpg"></p>
-<h2 id="LINUX宏内核的存储栈"><a href="#LINUX宏内核的存储栈" class="headerlink" title="LINUX宏内核的存储栈"></a>LINUX宏内核的存储栈</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210224144108.jpg"></p>
+<h3 id="NTFS"><a href="#NTFS" class="headerlink" title="NTFS"></a>NTFS</h3><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210224142031.jpg" alt=""></p>
+<h2 id="LINUX宏内核的存储栈"><a href="#LINUX宏内核的存储栈" class="headerlink" title="LINUX宏内核的存储栈"></a>LINUX宏内核的存储栈</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210224144108.jpg" alt=""></p>
 
     </div>
 

@@ -234,7 +234,7 @@
 <li>设备虚拟化</li>
 </ul>
 <h2 id="处理器虚拟化"><a href="#处理器虚拟化" class="headerlink" title="处理器虚拟化"></a>处理器虚拟化</h2><h3 id="ARM"><a href="#ARM" class="headerlink" title="ARM"></a>ARM</h3><p>一种直接的实现</p>
-<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/Snipaste_2021-03-01_13-01-51.jpg"></p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/Snipaste_2021-03-01_13-01-51.jpg" alt=""></p>
 <p>当操作系统执行系统 ISA 指令时下陷</p>
 <p>但是有些敏感指令并不属于特权指令，即它们不会陷入内核</p>
 <p>如何处理？</p>
@@ -261,7 +261,7 @@
 </ul>
 </li>
 </ul>
-<h4 id="Intel"><a href="#Intel" class="headerlink" title="Intel"></a>Intel</h4><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/Snipaste_2021-03-01_13-08-40.jpg"></p>
+<h4 id="Intel"><a href="#Intel" class="headerlink" title="Intel"></a>Intel</h4><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/Snipaste_2021-03-01_13-08-40.jpg" alt=""></p>
 <p>为了实现处理器虚拟化，Intel 使用了 VMCS（Virtual Machine Control Structure）</p>
 <ul>
 <li>VMM 提供给硬件的内存页（4KB）<ul>
@@ -279,7 +279,7 @@
 </ul>
 </li>
 </ul>
-<h5 id="ARM-1"><a href="#ARM-1" class="headerlink" title="ARM"></a>ARM</h5><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/Snipaste_2021-03-01_13-39-06.jpg"></p>
+<h5 id="ARM-1"><a href="#ARM-1" class="headerlink" title="ARM"></a>ARM</h5><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/Snipaste_2021-03-01_13-39-06.jpg" alt=""></p>
 <ul>
 <li>VM Entry<ul>
 <li>使用 ERET 指令从 VMM 进入 VM</li>
@@ -303,9 +303,9 @@
 <p>所以 Intel 是硬件执行的操作多，ARM 是软件执行的操作多。</p>
 <p>上面是 ARM 的 Type1 的虚拟化</p>
 <p>Type2 为：</p>
-<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/Snipaste_2021-03-01_13-44-11.jpg"></p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/Snipaste_2021-03-01_13-44-11.jpg" alt=""></p>
 <p>也可以为</p>
-<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/Snipaste_2021-03-01_13-46-45.jpg"></p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/Snipaste_2021-03-01_13-46-45.jpg" alt=""></p>
 <p>但是第二种的 Host OS 运行在 EL2，EL2 的寄存器与 EL1 不同，所以需要一定的处理来使得 Host OS 能运行在 EL2</p>
 
     </div>

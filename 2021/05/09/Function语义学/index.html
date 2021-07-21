@@ -252,7 +252,7 @@
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Point::func();</span><br><span class="line"><span class="comment">//扩张</span></span><br><span class="line"><span class="function">Point <span class="title">Point::func</span><span class="params">(Point *<span class="keyword">const</span> <span class="keyword">this</span>)</span></span>;</span><br><span class="line"><span class="comment">//如果 member function 是 const，则变成</span></span><br><span class="line"><span class="function">Point <span class="title">Point::func</span><span class="params">(<span class="keyword">const</span> Point *<span class="keyword">const</span> <span class="keyword">this</span>)</span></span>;</span><br></pre></td></tr></table></figure>
 <p>同时，函数名字也会经过一定的处理，让这个函数独一无二。</p>
 <h2 id="virtual-function"><a href="#virtual-function" class="headerlink" title="virtual function"></a>virtual function</h2><p>如果 function 是 virtual 的，那么会发生什么呢？</p>
-<p>在这里，我需要引入一下上一章的讨论：<a target="_blank" rel="noopener" href="http://yogacbf.com/2021/05/11/DATA%E8%AF%AD%E6%84%8F%E5%AD%A6/">C++类的DATA语意学 </a></p>
+<p>在这里，我需要引入一下上一章的讨论：<a target="_blank" rel="noopener" href="http://yogacbf.com/2021/05/11/DATA语意学/">C++类的DATA语意学 </a></p>
 <p>在多重继承下，一个 derived class 内含 n-1 个额外的 virtual tables，n 表示其上一层 base class 的个数（因此，单一继承将不会有额外的 virtual tables）。</p>
 <p>这和我上一章的猜想一样！😊</p>
 <p>好，回归话题。我们知道，如果一个 class 有 virtual function，或者base class 有 virtual function 或者 base class 是 virtual 的时候，这个 class 会有一个 vptr 指向 vtbl。</p>

@@ -236,7 +236,7 @@
 <p>实现：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Time Time::<span class="keyword">operator</span>+(<span class="keyword">const</span> Time &amp; t) <span class="keyword">const</span></span><br><span class="line">&#123;</span><br><span class="line">	Time sum;</span><br><span class="line">	sum.minutes = minutes + t.minutes;</span><br><span class="line">	sum.hours = hours + t.hours + sum.minutes / <span class="number">60</span>;</span><br><span class="line">	sum.minutes %= <span class="number">60</span>;</span><br><span class="line">	<span class="keyword">return</span> sum;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>但是上述重载有限制，即第一个参数必须是对象。</p>
-<p>例如可以执行 A = B * 2.85；但是不能执行 A = 2.85 * B；</p>
+<p>例如可以执行 A = B <em> 2.85；但是不能执行 A = 2.85 </em> B；</p>
 <p>解决这个问题的一个办法就是使用非成员函数。</p>
 <h2 id="友元函数"><a href="#友元函数" class="headerlink" title="友元函数"></a>友元函数</h2><p>创建友元函数的的第一步是将其原型放在类声明中，并在原型声明前加上关键字friend：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">friend</span> Time <span class="keyword">operator</span>*(<span class="keyword">double</span> m, <span class="keyword">const</span> Time &amp; t);</span><br></pre></td></tr></table></figure>

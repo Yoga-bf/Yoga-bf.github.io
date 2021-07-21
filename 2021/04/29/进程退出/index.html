@@ -231,7 +231,7 @@
 </ul>
 <h2 id="exit-系统调用"><a href="#exit-系统调用" class="headerlink" title="exit 系统调用"></a>exit 系统调用</h2><p>_exit() 函数是直接中止进程，exit() 会刷新缓冲流，然后再中止。</p>
 <p>在 exit 函数中，首先会释放进程的内存、page table，关闭已经打开的文件。如果这个进程还拥有子进程，它就会执行一个函数，把这些子进程的父进程设置为 init 进程(PID = 1)。执行完这些之后，调用 wakeup 函数唤醒当前进程的父进程。然后这个进程的状态被设置为 ZOMBIE。现在这个进程还没有完全释放它的资源，所以还不能被重用。所谓重用，就是期待最后一步，进程的所有状态都可以通过无关的 fork 系统调用复用。</p>
-<p>然后这个进程通过 sched 函数进入调度器线程。<a target="_blank" rel="noopener" href="http://yogacbf.com/2021/04/29/%E8%BF%9B%E7%A8%8B%E5%88%87%E6%8D%A2/">线程切换</a>。这时，这个进程的状态不是 RUNNABLE，所以它不能执行。</p>
+<p>然后这个进程通过 sched 函数进入调度器线程。<a target="_blank" rel="noopener" href="http://yogacbf.com/2021/04/29/进程切换/">线程切换</a>。这时，这个进程的状态不是 RUNNABLE，所以它不能执行。</p>
 <h2 id="wait-系统调用"><a href="#wait-系统调用" class="headerlink" title="wait 系统调用"></a>wait 系统调用</h2><p>当一个进程 exit 后，会返回到父进程的 wait ，wait 中会扫描进程表单，查找父进程是自己且进程状态时 ZOMBIE 的进程，然后父进程执行 freeproc 函数，完成释放资源的最后几步。所以每个进程都要有父进程，这也是 init 进程成为别的进程的父进程的原因。</p>
 <h2 id="kill-系统调用"><a href="#kill-系统调用" class="headerlink" title="kill 系统调用"></a>kill 系统调用</h2><p>kill 系统调用一般是扫描进程表单，找到目标进程。然后将目标进程 proc 结构体的 killed 标志位设置为1。如果进程是 SLEEPING 状态， kill 系统调用可能将它杀掉或者设置为 RUNNABLE 状态。当目标进程运行到内核代码时，会检查自己的 killed 标志位，如果为1，就调用 exit 系统调用结束自己。</p>
 

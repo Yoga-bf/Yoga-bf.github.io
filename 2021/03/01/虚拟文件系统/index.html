@@ -234,10 +234,10 @@
         <h2 id="LINUX中的虚拟文件系统VFS"><a href="#LINUX中的虚拟文件系统VFS" class="headerlink" title="LINUX中的虚拟文件系统VFS"></a>LINUX中的虚拟文件系统VFS</h2><p>在读取一个 inode 的文件时，VFS先找到该 inode 所属的文件系统，再调用该文件系统的读取接口</p>
 <p>VFS 维护一个统一的文件系统树</p>
 <p>操作系统内核启动时会挂载一个根文件系统，其它文件系统可以挂载在文件系统树的目录上</p>
-<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210224143351.jpg"></p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210224143351.jpg" alt=""></p>
 <p>但是并不是所有的文件系统都有 inode，所以为了能够挂载到 VFS，没有 inode 的文件系统需要有一个驱动来提供 inode</p>
 <p>所以总的图</p>
-<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210224143727.jpg"></p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210224143727.jpg" alt=""></p>
 
     </div>
 

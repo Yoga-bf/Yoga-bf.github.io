@@ -241,7 +241,7 @@
 <p>这种模型下，如果不考虑字节的对齐，如果 int 占用 4 字节，那么应该占用 8 字节（考虑一个字节的对齐）</p>
 <p>但是实际上，它占用了 16 字节。</p>
 <p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210508143706.png" alt="image-20210508143704836"></p>
-<p>这是为什么呢？主要还是因为指针，因为我们不知道一个 <code> Concrete1 * A</code> 会指向什么类型的 class。如果一个 base class 的指针指向了 derived class，如果不采用上面的模型，那么就会发什么奇奇怪怪的错误。</p>
+<p>这是为什么呢？主要还是因为指针，因为我们不知道一个 <code>Concrete1 * A</code> 会指向什么类型的 class。如果一个 base class 的指针指向了 derived class，如果不采用上面的模型，那么就会发什么奇奇怪怪的错误。</p>
 <h3 id="单-class-加上-virtual-function"><a href="#单-class-加上-virtual-function" class="headerlink" title="单 class 加上 virtual function"></a>单 class 加上 virtual function</h3><p>当加上 virtual function 会发生什么呢？众所周知，如果加上 virtual function，那么一般的编译器会产生两个东西，一个是 virtual table(vtbl)，一个是 vptr，vptr 是需要在 Class 模型里面的，因为如果要访问 virtual table，通过类里面的 vptr 就能访问到。</p>
 <p>但是 vptr 要放在哪里？事实上，放在哪里都可以，但是放在不同的地方会带来不同的效率影响。一般来说都会放在 class 的头部或者尾部，分析一下这两个部位分别有什么优点和缺点：</p>
 <p>尾部：</p>
