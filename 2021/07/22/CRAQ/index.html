@@ -20,24 +20,22 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="Zookeeper 作为一种 API，能够实现许多我们的需求，例如名字服务、配置管理、组员管理、互斥锁、读写锁、屏障、数据发布与订阅、master 选举、负载均衡、分布式锁和分布式队列等等。它以特殊的架构实现了许多特殊的功能、例如可在 replication read 的功能。">
+  <meta name="description" content="与普通的 chain replication 相比，CRAQ 优化了读。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Zookeeper">
-<meta property="og:url" content="http://example.com/2021/07/21/Zookeeper/index.html">
+<meta property="og:title" content="CRAQ Chain Replication with Apportioned Queries">
+<meta property="og:url" content="http://example.com/2021/07/22/CRAQ/index.html">
 <meta property="og:site_name" content="程序设计入微">
-<meta property="og:description" content="Zookeeper 作为一种 API，能够实现许多我们的需求，例如名字服务、配置管理、组员管理、互斥锁、读写锁、屏障、数据发布与订阅、master 选举、负载均衡、分布式锁和分布式队列等等。它以特殊的架构实现了许多特殊的功能、例如可在 replication read 的功能。">
+<meta property="og:description" content="与普通的 chain replication 相比，CRAQ 优化了读。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210721170010.png">
-<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210721171431.png">
-<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210721171446.png">
-<meta property="article:published_time" content="2021-07-21T14:52:17.647Z">
-<meta property="article:modified_time" content="2021-07-21T09:54:48.000Z">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210721192410.png">
+<meta property="article:published_time" content="2021-07-22T14:57:21.104Z">
+<meta property="article:modified_time" content="2021-07-22T06:06:46.000Z">
 <meta property="article:author" content="Bofan Chen">
 <meta property="article:tag" content="论文笔记">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210721170010.png">
+<meta name="twitter:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210721192410.png">
 
-<link rel="canonical" href="http://example.com/2021/07/21/Zookeeper/">
+<link rel="canonical" href="http://example.com/2021/07/22/CRAQ/">
 
 
 <script id="page-configurations">
@@ -50,7 +48,7 @@
   };
 </script>
 
-  <title>Zookeeper | 程序设计入微</title>
+  <title>CRAQ Chain Replication with Apportioned Queries | 程序设计入微</title>
   
 
 
@@ -170,7 +168,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/07/21/Zookeeper/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/07/22/CRAQ/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/logo.jpg">
@@ -183,7 +181,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Zookeeper
+          CRAQ Chain Replication with Apportioned Queries
         </h1>
 
         <div class="post-meta">
@@ -194,7 +192,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-07-21 22:52:17 / 修改时间：17:54:48" itemprop="dateCreated datePublished" datetime="2021-07-21T22:52:17+08:00">2021-07-21</time>
+              <time title="创建时间：2021-07-22 22:57:21 / 修改时间：14:06:46" itemprop="dateCreated datePublished" datetime="2021-07-22T22:57:21+08:00">2021-07-22</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -211,7 +209,7 @@
             </span>
 
           
-            <div class="post-description">Zookeeper 作为一种 API，能够实现许多我们的需求，例如名字服务、配置管理、组员管理、互斥锁、读写锁、屏障、数据发布与订阅、master 选举、负载均衡、分布式锁和分布式队列等等。它以特殊的架构实现了许多特殊的功能、例如可在 replication read 的功能。</div>
+            <div class="post-description">与普通的 chain replication 相比，CRAQ 优化了读。</div>
 
         </div>
       </header>
@@ -222,42 +220,38 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="什么是-Zookeeper"><a href="#什么是-Zookeeper" class="headerlink" title="什么是 Zookeeper"></a>什么是 Zookeeper</h2><p><em>In this paper, we describe ZooKeeper, a service for coordinating processes of distributed applications.</em></p>
-<h2 id="模型"><a href="#模型" class="headerlink" title="模型"></a>模型</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210721170010.png" alt="image-20210721170009554"></p>
-<p>首先，Zookeeper 拥有分层的命名空间，有两种类型的文件：</p>
+        <h2 id="CRAQ"><a href="#CRAQ" class="headerlink" title="CRAQ"></a>CRAQ</h2><p>CRAQ 是优化了读的 Chain Replication，并且提供了三种不同的一致性保证.</p>
+<p><a target="_blank" rel="noopener" href="http://yogacbf.com/2021/07/21/chain replication/">Chain Replication</a></p>
+<p>在传统的 CR 里面，写请求只能发给 Head，读请求发给 Tail，与 CR 不同的是，CRAQ 通过一张表实现了在分摊读的功能。</p>
+<p>具体实现：</p>
 <ul>
-<li>Regular：持久性节点，clients 会通过显式的操作来创建或者删除 regular znodes 节点。</li>
-<li>Ephemeral：临时性节点，clents 通过显式的操作创建它们，通过显式的删除操作或者 session 结束之后自动删除。</li>
+<li>CRAQ 的节点能存储一个对象的多个版本，每个版本都包含一个递增的版本号的代表是 clean 还是 dirty 的属性字段。</li>
+<li>在开始的时候，每个对象的属性字段都是 clean。<ul>
+<li>如果一个节点接收到了对象新的值，如果这个节点不是 Tail，就会存储这个值，然后把老版本的属性设置为 dirty</li>
+<li>如果节点是 Tail，那么它就会把属性设置为 clean （称为 committed），并向前传递修改完成的信息。</li>
 </ul>
-<p>上面的名词解释：</p>
-<ul>
-<li>znodes：表示 Zookeeper 的内存数据节点，存放在 data tree 上。</li>
-<li>session：client 通过创建 session 来和 Zookeeper 通信，session 有自己的持续时间，Zookeeper 会将 session 持久化存储，所以在 session 未超时的时间里，clients 可以透明的和不同的 Zookeeper server 通信。</li>
+</li>
+<li>如果节点接收到修改完成的信息，那么就会把 object 设置为 clean，并可以删除老版本。</li>
+<li>当一个节点收单 query request 的时候，它就会查看这个 object 的属性是 clean 还是 dirty，如果是 clean，那么就直接返回，如果是dirty，那么这个节点就会向 Tail 发送信息查询 Tail 最后提交的版本号，然后这个节点就会把这个版本号对应的结果返回。</li>
 </ul>
-<p>Zookeeper 里面还实现了 Watcher，例如某个 client 在某个 znode 上设置了 watch 参数，如果这个 znode 发生变动，Watcher 就会通知这个 client，但 watch 的触发是一次性的，即在一个 watch 被设置后，突然发生多次改动，也只会触发一次 watch。</p>
-<p>每个 replica 里都会维护一个 watch table，如果一个 K/V 被更改，它能够通过查找 watch table 来实现</p>
-<h2 id="一致性保证"><a href="#一致性保证" class="headerlink" title="一致性保证"></a>一致性保证</h2><p>Zookeeper 提供了顺序一致性，并不能保证强一致性。</p>
-<p>Zookepper 提供了两个保证：</p>
-<ul>
-<li><strong>Linearizable writes</strong>：all requests that update the state of ZooKeeper are serializable and respect precedence;</li>
-<li><strong>FIFO client order</strong>：all requests from a given client are executed in the order that they were sent by the client.</li>
-</ul>
-<p>但 client 是可以异步提交写请求了，为了保障写请求是按照 client 发送的顺序，可能是在请求里添加了序号。</p>
-<p>然后就是 FIFO client order，因为 client 是可以向 replica 发出 read 的请求，但是如果在 read 之前，client 向 Leader 发送了 write 的请求，那么这个 read 请求就会在 write 请求执行完成之后再执行，并且会通过一定的措施让我一定能在 replica 读到刚刚在 Leader 写入的数据。</p>
-<p>但是对于多 client 来说就会不同，clientA write 一个数据，clientB 在一个 replica read 这个数据，这个数据不一定是最新的，所以 Zookeeper 并没有提供强一致性。</p>
-<p>ZooKeeper is a high performance, scalable service. Both reads and write operations are designed to be fast, though reads are faster than writes. The reason for this is that in the case of reads, ZooKeeper can serve older data, which in turn is due to ZooKeeper’s consistency guarantees: Sequential Consistency Updates from a client will be applied in the order that they were sent.</p>
-<h2 id="API"><a href="#API" class="headerlink" title="API"></a>API</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210721171431.png" alt="image-20210721171429901"></p>
-<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210721171446.png" alt="image-20210721171444928"></p>
-<h2 id="使用原语的示例"><a href="#使用原语的示例" class="headerlink" title="使用原语的示例"></a>使用原语的示例</h2><h3 id="配置管理"><a href="#配置管理" class="headerlink" title="配置管理"></a>配置管理</h3><p>leader 通过设置一个文件来表明是否有新的配置，例如通过设置一个文件 ready，如果要更改配置，就先删除 ready，然后写配置文件，当写完后就创建 ready。process 可以在 ready 上设置 watch，这样就能及时的读取新的配置。</p>
-<h3 id="群组"><a href="#群组" class="headerlink" title="群组"></a>群组</h3><p>一个 process 可以在一个 znode1 下创建一个 znode，然后通过 getChildren(znode1, watch) 来找到和它一个群组的成员</p>
-<h3 id="锁"><a href="#锁" class="headerlink" title="锁"></a>锁</h3><p>通过创建一个文件，然后查看是否成功创建来观察自己是否拿到锁。但是如果采用这样的方式会导致惊群效应（thundering herd）的问题，即多个进程争夺一把锁，导致计算机CPU被大量浪费。</p>
-<p>但是它还能实现没有惊群效应的锁，即通过顺序创建文件，并监视只比自己序号小的文件来完成这个操作，这种锁类似于排号锁（Ticket Lock）。</p>
-<p>但是这种锁和普通OS的锁的不同，由于想要获取锁的 process 可能会被 kill，所以当一个 process 被 Watcher 唤醒的时候，需要注意自己的文件前面是否还存在比自己序号更小的文件，如果存在的话就需要等前面的那个文件。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>Zookeeper 的优点在于能够实现在多个 replica 上实现读的功能，这样就较大的减缓了 Leader 的负载，这种同样的思想也出现在 CRAQ 中，这也是我在写 CRAQ 之前写这篇的原因。</p>
-<p>Zookeeper 通过对各种原语来管理自己的文件来实现对 clients 的协同操作。特别是 Watcher 的设置，还有就是 clients 能从 replica 实现读的功能。</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210721192410.png" alt="image-20210721192409596"></p>
+<p>所以，在读负载比较大的系统里，CRAQ 明显能比 CR 承载更大的吞吐量。就算是写比较多的系统，查询容易查询到 dirty 数据，但是只要这个节点直接向 Tail 发送版本查询请求就能直接返回数据，同样能实现更大的吞吐量。</p>
+<h2 id="一致性"><a href="#一致性" class="headerlink" title="一致性"></a>一致性</h2><p>他们提供了三种一致性模型。</p>
+<h3 id="强一致性"><a href="#强一致性" class="headerlink" title="强一致性"></a>强一致性</h3><p> 在正常情况下使用 CRAQ，是符合强一致性规则的。读操作只会读到最近的一次写的 committed （指 Tail committed）</p>
+<h3 id="最终一致性"><a href="#最终一致性" class="headerlink" title="最终一致性"></a>最终一致性</h3><p>允许返回被读的节点的最新的数据，即使这个数据还没有 committed，对于单个 client 来说，它读取的内容也是有序的</p>
+<h3 id="有最大界的最终一致性"><a href="#有最大界的最终一致性" class="headerlink" title="有最大界的最终一致性"></a>有最大界的最终一致性</h3><p>同样允许读没有 committed 的数据，但是时间和版本号要符合一定的限制。对于正常的链来说，读取的数据一般会比较新。但是如果系统是 partitioned ，那么这个节点的数据就不会更新，所以版本一般会比较低。</p>
+<h2 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h2><p>他们使用了 <a target="_blank" rel="noopener" href="http://yogacbf.com/2021/07/21/Zookeeper/">Zookeeper</a> 来为 CRAQ 提供跟踪成员身份的方法和一种存储链元数据的方法。通过使用 Zookeeper，当节点添加到组或从组中删除时，CRAQ 节点保证收到通知。</p>
+<h3 id="基于多播降低写的延迟"><a href="#基于多播降低写的延迟" class="headerlink" title="基于多播降低写的延迟"></a>基于多播降低写的延迟</h3><p>可以看出使用 Chain Replication 的一个重要的问题就是写 latency 过大，每次写都需要传递到 Tail 再返回写入成功的信息。所以他们采用了多播的方式来降低写的延迟。</p>
+<p>当 Head 接收到一个 write request 时，它会将写入信息以多播的方式发送给 chain，为了保证中间节点能在 Tail 之前写入，Head 会发送一个小的 Metadata 沿着整条链传输。Head 之后的节点必须在接收到 Metadata 之后才能写入数据。（在我看来优点在于，数据的传输不用再是串行的，而变成了并发的，虽然需要等待 Metadata，但是如果节点已经收到了写入信息，再收到 Metadata 之后仅仅需要写入再直接传输数据。与之前的链式传输相比，减少了必须传输的数据的长度，还减少了对写入信息的处理时间）</p>
+<p>当 Tail 接收到 Metadata 和多播的写入信息之后，它会把确认信息也以多播的形式发送出去，特别是可以直接发送给 Head，即使中间节点接收到了 read request，因为数据是 dirty 的，所以节点需要向 Tail 发送查询请求，一样能读到最近 committed 的数据。</p>
+<h3 id="基于-Zookeeper-的管理"><a href="#基于-Zookeeper-的管理" class="headerlink" title="基于 Zookeeper 的管理"></a>基于 Zookeeper 的管理</h3><p>使用了基于 Zookeeper 的成员管理，每个节点存放在 /nodes/dc_name/node_id，并设置 watch 在 /nodes/dc_name 能够收到成员变更的通知。</p>
+<p>/chains/chain_id 存放链的配置信息，而不存放链的节点，链的节点在这里设置 watch 能查看配置更改情况。</p>
+<h4 id="链节点功能"><a href="#链节点功能" class="headerlink" title="链节点功能"></a>链节点功能</h4><p>使用 one-hop DHT 来组织节点链接，一个链的前置和后置节点被定义为 DHT 环的前置和后置节点。但是对于 DHT 不太熟悉</p>
+<p>他们使用基于内存的方式存放对象，后面尝试使用 k-v</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>CRAQ 想比于之前的 CR，增加对读负载的均衡，通过一个数据的属性标志位，实现能在所有节点进行读。并且如果是 dirty 也仅仅需要传输一个版本号就能实现一致性。</p>
 <p><strong>reference</strong></p>
 <ul>
-<li>ZooKeeper: Wait-free coordination for Internet-scale systems</li>
+<li>Object Storage on CRAQ: High-throughput chain replication for read-mostly workloads</li>
 </ul>
 
     </div>
@@ -277,13 +271,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2021/07/21/chain%20replication/" rel="prev" title="Chain Replication">
-      <i class="fa fa-chevron-left"></i> Chain Replication
+    <a href="/2021/07/21/Zookeeper/" rel="prev" title="Zookeeper">
+      <i class="fa fa-chevron-left"></i> Zookeeper
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2021/07/22/CRAQ/" rel="next" title="CRAQ Chain Replication with Apportioned Queries">
-      CRAQ Chain Replication with Apportioned Queries <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -342,7 +333,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF-Zookeeper"><span class="nav-number">1.</span> <span class="nav-text">什么是 Zookeeper</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B"><span class="nav-number">2.</span> <span class="nav-text">模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E8%87%B4%E6%80%A7%E4%BF%9D%E8%AF%81"><span class="nav-number">3.</span> <span class="nav-text">一致性保证</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#API"><span class="nav-number">4.</span> <span class="nav-text">API</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E5%8E%9F%E8%AF%AD%E7%9A%84%E7%A4%BA%E4%BE%8B"><span class="nav-number">5.</span> <span class="nav-text">使用原语的示例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E7%AE%A1%E7%90%86"><span class="nav-number">5.1.</span> <span class="nav-text">配置管理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BE%A4%E7%BB%84"><span class="nav-number">5.2.</span> <span class="nav-text">群组</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%94%81"><span class="nav-number">5.3.</span> <span class="nav-text">锁</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#CRAQ"><span class="nav-number">1.</span> <span class="nav-text">CRAQ</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E8%87%B4%E6%80%A7"><span class="nav-number">2.</span> <span class="nav-text">一致性</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%BA%E4%B8%80%E8%87%B4%E6%80%A7"><span class="nav-number">2.1.</span> <span class="nav-text">强一致性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%80%A7"><span class="nav-number">2.2.</span> <span class="nav-text">最终一致性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%89%E6%9C%80%E5%A4%A7%E7%95%8C%E7%9A%84%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%80%A7"><span class="nav-number">2.3.</span> <span class="nav-text">有最大界的最终一致性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0"><span class="nav-number">3.</span> <span class="nav-text">实现</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E5%A4%9A%E6%92%AD%E9%99%8D%E4%BD%8E%E5%86%99%E7%9A%84%E5%BB%B6%E8%BF%9F"><span class="nav-number">3.1.</span> <span class="nav-text">基于多播降低写的延迟</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E-Zookeeper-%E7%9A%84%E7%AE%A1%E7%90%86"><span class="nav-number">3.2.</span> <span class="nav-text">基于 Zookeeper 的管理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%93%BE%E8%8A%82%E7%82%B9%E5%8A%9F%E8%83%BD"><span class="nav-number">3.2.1.</span> <span class="nav-text">链节点功能</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
