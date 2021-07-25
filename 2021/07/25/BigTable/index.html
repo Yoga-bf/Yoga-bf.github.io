@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="BigTable 是为了管理结构化数据的分布式存储系统">
+<meta property="og:type" content="article">
+<meta property="og:title" content="BigTable">
+<meta property="og:url" content="http://example.com/2021/07/25/BigTable/index.html">
+<meta property="og:site_name" content="程序设计入微">
+<meta property="og:description" content="BigTable 是为了管理结构化数据的分布式存储系统">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210725192043.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210725201622.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210725201745.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210725210412.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210725215245.png">
+<meta property="article:published_time" content="2021-07-25T14:08:43.343Z">
+<meta property="article:modified_time" content="2021-07-25T14:08:12.965Z">
+<meta property="article:author" content="Bofan Chen">
+<meta property="article:tag" content="论文笔记">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210725192043.png">
+
+<link rel="canonical" href="http://example.com/2021/07/25/BigTable/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>BigTable | 程序设计入微</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">程序设计入微</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/07/25/BigTable/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/logo.jpg">
+      <meta itemprop="name" content="Bofan Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="程序设计入微">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          BigTable
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-07-25 22:08:43 / 修改时间：22:08:12" itemprop="dateCreated datePublished" datetime="2021-07-25T22:08:43+08:00">2021-07-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" itemprop="url" rel="index"><span itemprop="name">分布式</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">BigTable 是为了管理结构化数据的分布式存储系统</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>BigTable 是 Google 云计算的三驾马车之一，它与 MapReduce、GFS 联合形成了 Google 云计算解决方案。BigTable 类似于一个数据库，它提供 API 给 clients 调用，能够实现以字符串 k-v 的形式存储大量的数据。</p>
+<h2 id="由来"><a href="#由来" class="headerlink" title="由来"></a>由来</h2><p>BigTable 的由来是因为大数据的需求，他们需要对有不同数据存储需求且是PB量级的数据提供存取的功能。他们使用了 map 的形式存数据，以 tablet 块的形式分割数据。为了能够存储大量数据，参考页表的形式，他们也提供了多级的形式存数据。</p>
+<h2 id="逻辑结构"><a href="#逻辑结构" class="headerlink" title="逻辑结构"></a>逻辑结构</h2><p>他们提供了表结构的逻辑结构，即解释数据的参数：row、column、time：</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210725192043.png" alt="image-20210725192041447"></p>
+<h3 id="row"><a href="#row" class="headerlink" title="row"></a>row</h3><p>BigTable 以 row key 的形式维护数据，row key 可以是任意字符串，以满足不同 clients 的需求。BigTable 对于单行的读写具有原子性且可串行化的。连续的行可被分成一起，称为 tablet，是分布式调度和存储的最小单元。所以如果操作连续的行会得到更好的效率，因为在相同的 tablet 或者相邻的 tablet，它们会被存储在相邻的机器。例如，存储 URL 的时候，就按照逆序，这样，相似的域名就会在相邻的区域，易于解析。</p>
+<h3 id="column"><a href="#column" class="headerlink" title="column"></a>column</h3><p>column keys 可被分组成 column families，是访问控制的基本单元。必须要先创建 col families 才能创建 col，所以一个 col family 下的 col 基本是相同属性的。在上图中有两个 col families：contents、anchor。所以一个 col 的命名方式是 $family:qualifier$，其中 $ family $ 必须是 printable，$qualifier$ 则可以是任意字符串。</p>
+<h3 id="Timestamps"><a href="#Timestamps" class="headerlink" title="Timestamps"></a>Timestamps</h3><p>time 是时间戳，便于版本管理和垃圾回收。</p>
+<p>所以通过 (row:string; column:string; time:int64) -&gt; string 就能生成 map 里面的 key 值。这就是 BigTable 的逻辑结构。</p>
+<h2 id="API"><a href="#API" class="headerlink" title="API"></a>API</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//open the table</span></span><br><span class="line">Table *T = OpenOrDie(<span class="string">&quot;/bigtable/web/webtable&quot;</span>);</span><br><span class="line"><span class="comment">// Write a new anchor and delete an old anchor</span></span><br><span class="line"><span class="function">RouMutation <span class="title">r1</span><span class="params">(T, <span class="string">&quot;com.cnn.www&quot;</span>)</span></span>;</span><br><span class="line">r1.Set(<span class="string">&quot;anchor:www.c-span.org&quot;</span>, <span class="string">&quot;CNN&quot;</span>);</span><br><span class="line">r1.Delete(<span class="string">&quot;anchor:www.abc.com&quot;</span>);</span><br><span class="line">Operation op;</span><br><span class="line">Apply(&amp;op, &amp;r1);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Reading from BigTable</span></span><br><span class="line"><span class="function">Scanner <span class="title">scanner</span><span class="params">(T)</span></span>;</span><br><span class="line">ScanStream *stream;</span><br><span class="line">stream = scanner.FetchColumnFamily(<span class="string">&quot;anchor&quot;</span>);</span><br><span class="line">stream-&gt;SetReturnAllVersions();</span><br><span class="line">scanner.Lookup(<span class="string">&quot;com.cnn.www&quot;</span>);</span><br><span class="line"><span class="keyword">for</span>(; !stream-&gt;Done(); stream-&gt;Next()) &#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%s %s %lld %s\n&quot;</span>, scanner.RowName(), stream-&gt;ColumnName(), stream-&gt;MicroTimestamp(), stream-&gt;Value());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>BigTable 支持原子的对于单行的 read-modify-write，不支持跨行的事务操作，这个在 spanner 里面进行了优化。</p>
+<p>BigTable 可用于服务 MapReduce，可以存储 MapReduce 所需要的输入文件和最终结果文件。可是在编写 MapReduce 的时候，Map Worker 是需要存储中间文件的，看来文件同样是存储在 Worker 的本地，以后 Reduce 的时候再取出来。</p>
+<h2 id="Building-block"><a href="#Building-block" class="headerlink" title="Building block"></a>Building block</h2><p>BigTable 依托于 Google 以往开发组件 GFS 和 chubby，并且 BigTable 和别的分布式应用同时运行在 Linux machine 上，所以还需要集群管理系统。</p>
+<ul>
+<li>GFS：提供数据存储和 log 存储服务</li>
+<li>集群管理系统：Bigtable depends on a Google cluster management system for scheduling jobs, managing resources on shared machines, monitoring machine status, and dealing with machine failures.</li>
+<li>SSTable：提供持久化、有序的 map，BigTable 真正存储数据的单位。SSTable 由许多的 block 组成，每个 block 都有 index，在打开 SSTable 的时候将 index 存入内存，加快读取速度。</li>
+<li>chubby：提供分布式锁，提供和 zookeeper 类似的服务</li>
+</ul>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210725201622.png" alt="image-20210725201619612"></p>
+<h2 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210725201745.png" alt="image-20210725201743211"></p>
+<p>在 BigTable 中，由主要三个组件组成，client 的 library，一个 master，多个 tablet server。</p>
+<ul>
+<li>master：负责给 tablet server 分配 tablet，管理 tablet 的增加和周期，平衡 tablet server 的负载，还有对 GFS 的垃圾回收。并且它还负责 table 和 col family 的创建和删除。</li>
+<li>tablet server：tablet server 会管理多个 tablet，tablet server 会处理针对它所管理的 tablet 的 read、write。并且会针对 tablet 进行 split 。</li>
+<li>client 的 library 缓存着 tablet 的位置，如果需要查询的 tablet 在缓存中，就直接访问，如果没有就递归向上查找位置。并且 library 可以同时缓存多个 tablet 的位置，以减少以后消耗的时间。</li>
+</ul>
+<h3 id="Tablet-Location"><a href="#Tablet-Location" class="headerlink" title="Tablet Location"></a>Tablet Location</h3><p>类似于页表，BigTable 采用了多级的形式。</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210725210412.png" alt="image-20210725210402103"></p>
+<p>首先在 Chubby 中存储 Root tablet 的地址，事实上，Root tablet 和 METADATA tablets 是相同的，Root tablet 是 METADATA tablets 的最靠前的一个 tablet，但不允许 Root tablet split。Root tablet 指出 METADATA tablets 的位置，METADATA tablets 存储着 tablets 的地址。</p>
+<h3 id="Tablet-Assignment"><a href="#Tablet-Assignment" class="headerlink" title="Tablet Assignment"></a>Tablet Assignment</h3><p>Master 需要管理 tablet assignment，在同一个时间，一个 tablet 最多只会属于一个 tablet server。master 会跟踪活着的 tablet server，然后把未分配的 tablet 分配给它们。BigTable 使用 chubby 来实现 tablet server 发现的操作。当一个 tablet server 启动的时候，会和 chubby 的 master 建立一个 session，创建一个文件，即获得一个锁。这个文件在特定的文件目录下，然后 BigTable 的 master 通过扫描这个文件夹就能得知存活的 tablet server。</p>
+<p>当 master 轮询 tablet server 锁状态的时候发现，tablet 停止服务或者和 master 断连，master 就向 chubby 申请锁，如果能请求到，就重新分配属于挂掉的 tablet server 的 tablet。如果 master 失去和 chubby 的联系就 kill 自己。</p>
+<p>但是 master 有可能会失效，当新的 master 启动的时候，它依次执行下面的操作：</p>
+<ul>
+<li>master 首先获得一个 chubby 中的一个特定的锁，以防止有多个 master 存在。</li>
+<li>master 扫描 chubby 的 servers directory，然后获得所有存活的 tablet servers。</li>
+<li>master 和 tablet servers 通信，得知它们管理的 tablet，然后通知它们更新 master 对象。</li>
+<li>master 通过扫描 METADATA tablet 来得知所有的 tablets，把未分配的 tablets 分配给有足够资源的 tablet servers。</li>
+</ul>
+<h3 id="Tablet-serving"><a href="#Tablet-serving" class="headerlink" title="Tablet serving"></a>Tablet serving</h3><p>他们使用 WAL 实现写。</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210725215245.png" alt="image-20210725215243598"></p>
+<p>Write-ahead-log：write 会先生成 commit log，然后写入 memtable，当 memtable 的长度超过一定的限度时，就把 memtable 写入到 SSTable。其中，memtable 是 in-memory 的，SSTable 是存储在硬盘的不变的数据。</p>
+<p>一个 client 访问数据的不需要经过 master，</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0/" rel="tag"># 论文笔记</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/07/22/CRAQ/" rel="prev" title="CRAQ Chain Replication with Apportioned Queries">
+      <i class="fa fa-chevron-left"></i> CRAQ Chain Replication with Apportioned Queries
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%94%B1%E6%9D%A5"><span class="nav-number">1.</span> <span class="nav-text">由来</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%BB%E8%BE%91%E7%BB%93%E6%9E%84"><span class="nav-number">2.</span> <span class="nav-text">逻辑结构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#row"><span class="nav-number">2.1.</span> <span class="nav-text">row</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#column"><span class="nav-number">2.2.</span> <span class="nav-text">column</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Timestamps"><span class="nav-number">2.3.</span> <span class="nav-text">Timestamps</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#API"><span class="nav-number">3.</span> <span class="nav-text">API</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Building-block"><span class="nav-number">4.</span> <span class="nav-text">Building block</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0"><span class="nav-number">5.</span> <span class="nav-text">实现</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Tablet-Location"><span class="nav-number">5.1.</span> <span class="nav-text">Tablet Location</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tablet-Assignment"><span class="nav-number">5.2.</span> <span class="nav-text">Tablet Assignment</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tablet-serving"><span class="nav-number">5.3.</span> <span class="nav-text">Tablet serving</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Bofan Chen"
+      src="/images/logo.jpg">
+  <p class="site-author-name" itemprop="name">Bofan Chen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">63</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Bofan Chen</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>
