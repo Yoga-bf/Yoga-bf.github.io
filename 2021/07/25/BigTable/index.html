@@ -33,7 +33,7 @@
 <meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210725210412.png">
 <meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210725215245.png">
 <meta property="article:published_time" content="2021-07-25T14:08:43.343Z">
-<meta property="article:modified_time" content="2021-07-25T14:08:12.965Z">
+<meta property="article:modified_time" content="2021-07-27T10:38:01.198Z">
 <meta property="article:author" content="Bofan Chen">
 <meta property="article:tag" content="论文笔记">
 <meta name="twitter:card" content="summary">
@@ -194,10 +194,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2021-07-25 22:08:43 / 修改时间：22:08:12" itemprop="dateCreated datePublished" datetime="2021-07-25T22:08:43+08:00">2021-07-25</time>
+              <time title="创建时间：2021-07-25 22:08:43" itemprop="dateCreated datePublished" datetime="2021-07-25T22:08:43+08:00">2021-07-25</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-07-27 18:38:01" itemprop="dateModified" datetime="2021-07-27T18:38:01+08:00">2021-07-27</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -264,8 +270,36 @@
 </ul>
 <h3 id="Tablet-serving"><a href="#Tablet-serving" class="headerlink" title="Tablet serving"></a>Tablet serving</h3><p>他们使用 WAL 实现写。</p>
 <p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/20210725215245.png" alt="image-20210725215243598"></p>
-<p>Write-ahead-log：write 会先生成 commit log，然后写入 memtable，当 memtable 的长度超过一定的限度时，就把 memtable 写入到 SSTable。其中，memtable 是 in-memory 的，SSTable 是存储在硬盘的不变的数据。</p>
-<p>一个 client 访问数据的不需要经过 master，</p>
+<ul>
+<li>Write-ahead-log：write 会先生成 commit log，然后写入 memtable，当 memtable 的长度超过一定的限度时，就把 memtable 写入到 SSTable。其中，memtable 是 in-memory 的，SSTable 是存储在硬盘的不变的数据。</li>
+<li>recover：为了恢复 tablet，tablet server 会从它的 METADATA tablet 中读取 tablet 的 metadata，这个 metadata 包含了一系列的 SSTable 和 redo point，即可能存储数据的 log，再根据 log 恢复数据</li>
+<li>write：检查格式是否正确，再检查是否有权限，最后写入 log</li>
+<li>read：检查格式、权限，然后合并 memtable 和 SSTable 查看数据</li>
+</ul>
+<h3 id="Compaction"><a href="#Compaction" class="headerlink" title="Compaction"></a>Compaction</h3><p>由于写会导致 memtable 变长，所以当 memtable 的长度达到某个阈值时，就会把 memtable 写入 SSTable，优点：</p>
+<ul>
+<li>减少内存使用，memtable 是存放在内存中的，将 memtable 持久化 SSTable 会减少内存使用</li>
+<li>减少恢复时读取的 log 数量</li>
+</ul>
+<p>同时为了减少 SSTable 数量对硬盘的压力，会对 SSTable 进行 merge。merge 分为两种：</p>
+<ul>
+<li>将所有 SSTable merge 成一个 SSTable 称为 major compaction</li>
+<li>其余的称为 non-major compaction</li>
+</ul>
+<p>SSTables produced by non-major compactions can contain special deletion entries that suppress deleted data in older SSTables that are still live. A major compaction, on the other hand, produces an SSTable that contains no deletion information or deleted data.</p>
+<h2 id="改良"><a href="#改良" class="headerlink" title="改良"></a>改良</h2><h3 id="Locality-Groups"><a href="#Locality-Groups" class="headerlink" title="Locality Groups"></a>Locality Groups</h3><p>将多个 column family 组合成一个 locality groups，在 compaction 的时候，locality groups 可以 merge 到同一个 SSTable</p>
+<h3 id="Compression"><a href="#Compression" class="headerlink" title="Compression"></a>Compression</h3><p>用户可以控制本地组的 SSTables 是否被 compaction</p>
+<h3 id="Caching-for-Read-Peformance"><a href="#Caching-for-Read-Peformance" class="headerlink" title="Caching for Read Peformance"></a>Caching for Read Peformance</h3><p>两个等级的 cache：</p>
+<ul>
+<li>Scan cache：通过在 tablet server 中 cache tablet 的 k-v 值来方便用户判断去寻找那些 tablet。</li>
+<li>Block cache：缓存 SSTable blocks</li>
+</ul>
+<h3 id="Bloom-Filters"><a href="#Bloom-Filters" class="headerlink" title="Bloom Filters"></a>Bloom Filters</h3><p>可以让用户直接查询 SSTable 中是否有特定 row/col 的内容，而不用访问磁盘</p>
+<h3 id="commit-log-Implementation"><a href="#commit-log-Implementation" class="headerlink" title="commit-log Implementation"></a>commit-log Implementation</h3><p>如果所有的修改都放入同一个 commit log 文件，会导致 GFS 产生大量的磁盘读写，如果针对单个 tablet 建立一个文件，会导致文件过多并降低 group 的性能。所以他们针对一个 tablet server 建立一个 commit log 文件。但是如果 tablet server 损坏，tablet 给别的 server 使用的话，需要读取的 log 是整个 server 集合的，为了减少读取的内容，他们把 log 一个标签：$<table, row\ name, log\ sequence\ number>$，这样，根据 tablet 将 log 排序，就只用读取自己需要恢复的 tablet 的 log。</p>
+<p>同时由于 GFS 的写性能有时不好，所以他们使用两个线程去写。在一个时间只有一个线程会积极写，当积极写的线程性能不佳时，另一个线程会继续把 commit log queue 的内容写入。</p>
+<h3 id="Speeding-Up-Tablet-Recovery"><a href="#Speeding-Up-Tablet-Recovery" class="headerlink" title="Speeding Up Tablet Recovery"></a>Speeding Up Tablet Recovery</h3><p>在卸载 Tablet 之前，Tablet server 会执行第一次 minor compaction，然后停止服务这个 tablet，在真正 unload 之前，会执行第二次 minor compaction。</p>
+<h3 id="Exploiting-Immutability"><a href="#Exploiting-Immutability" class="headerlink" title="Exploiting Immutability"></a>Exploiting Immutability</h3><p>由于 SSTable 是不变的，在 read 和 write 的时候会变的只有 memtable，所以对 memtable 使用 COW 来实现并发控制。</p>
+<p>删除 SSTable 也就变成了 mark-and-sweep 垃圾收集机制。 </p>
 
     </div>
 
@@ -346,7 +380,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%94%B1%E6%9D%A5"><span class="nav-number">1.</span> <span class="nav-text">由来</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%BB%E8%BE%91%E7%BB%93%E6%9E%84"><span class="nav-number">2.</span> <span class="nav-text">逻辑结构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#row"><span class="nav-number">2.1.</span> <span class="nav-text">row</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#column"><span class="nav-number">2.2.</span> <span class="nav-text">column</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Timestamps"><span class="nav-number">2.3.</span> <span class="nav-text">Timestamps</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#API"><span class="nav-number">3.</span> <span class="nav-text">API</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Building-block"><span class="nav-number">4.</span> <span class="nav-text">Building block</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0"><span class="nav-number">5.</span> <span class="nav-text">实现</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Tablet-Location"><span class="nav-number">5.1.</span> <span class="nav-text">Tablet Location</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tablet-Assignment"><span class="nav-number">5.2.</span> <span class="nav-text">Tablet Assignment</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tablet-serving"><span class="nav-number">5.3.</span> <span class="nav-text">Tablet serving</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%94%B1%E6%9D%A5"><span class="nav-number">1.</span> <span class="nav-text">由来</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%BB%E8%BE%91%E7%BB%93%E6%9E%84"><span class="nav-number">2.</span> <span class="nav-text">逻辑结构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#row"><span class="nav-number">2.1.</span> <span class="nav-text">row</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#column"><span class="nav-number">2.2.</span> <span class="nav-text">column</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Timestamps"><span class="nav-number">2.3.</span> <span class="nav-text">Timestamps</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#API"><span class="nav-number">3.</span> <span class="nav-text">API</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Building-block"><span class="nav-number">4.</span> <span class="nav-text">Building block</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0"><span class="nav-number">5.</span> <span class="nav-text">实现</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Tablet-Location"><span class="nav-number">5.1.</span> <span class="nav-text">Tablet Location</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tablet-Assignment"><span class="nav-number">5.2.</span> <span class="nav-text">Tablet Assignment</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tablet-serving"><span class="nav-number">5.3.</span> <span class="nav-text">Tablet serving</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Compaction"><span class="nav-number">5.4.</span> <span class="nav-text">Compaction</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%94%B9%E8%89%AF"><span class="nav-number">6.</span> <span class="nav-text">改良</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Locality-Groups"><span class="nav-number">6.1.</span> <span class="nav-text">Locality Groups</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Compression"><span class="nav-number">6.2.</span> <span class="nav-text">Compression</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Caching-for-Read-Peformance"><span class="nav-number">6.3.</span> <span class="nav-text">Caching for Read Peformance</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Bloom-Filters"><span class="nav-number">6.4.</span> <span class="nav-text">Bloom Filters</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#commit-log-Implementation"><span class="nav-number">6.5.</span> <span class="nav-text">commit-log Implementation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Speeding-Up-Tablet-Recovery"><span class="nav-number">6.6.</span> <span class="nav-text">Speeding Up Tablet Recovery</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Exploiting-Immutability"><span class="nav-number">6.7.</span> <span class="nav-text">Exploiting Immutability</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -461,6 +495,59 @@
   
 
   
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
 
   
 
