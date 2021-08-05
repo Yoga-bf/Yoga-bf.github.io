@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Aurora 将计算存储分离，并且只传输 Log，减少了网络需求，并且通过 Quorum 机制来实现一致性读写。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Amazon Aurora">
+<meta property="og:url" content="http://example.com/2021/08/05/Amazon%20Aurora/index.html">
+<meta property="og:site_name" content="程序设计入微">
+<meta property="og:description" content="Aurora 将计算存储分离，并且只传输 Log，减少了网络需求，并且通过 Quorum 机制来实现一致性读写。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210802224540032.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210802223640189.png">
+<meta property="og:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210802225520243.png">
+<meta property="article:published_time" content="2021-08-05T15:58:58.496Z">
+<meta property="article:modified_time" content="2021-08-05T15:58:27.000Z">
+<meta property="article:author" content="Bofan Chen">
+<meta property="article:tag" content="论文笔记">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210802224540032.png">
+
+<link rel="canonical" href="http://example.com/2021/08/05/Amazon%20Aurora/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Amazon Aurora | 程序设计入微</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">程序设计入微</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/08/05/Amazon%20Aurora/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/logo.jpg">
+      <meta itemprop="name" content="Bofan Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="程序设计入微">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Amazon Aurora
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-08-05 23:58:58 / 修改时间：23:58:27" itemprop="dateCreated datePublished" datetime="2021-08-05T23:58:58+08:00">2021-08-05</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" itemprop="url" rel="index"><span itemprop="name">分布式</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">Aurora 将计算存储分离，并且只传输 Log，减少了网络需求，并且通过 Quorum 机制来实现一致性读写。</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>这篇文章所解决的问题是客户使用云服务搭建数据库，在他们以往的云服务中，提供的是通用的数据库服务，然而这种服务会导致大量的网络数据：</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210802224540032.png" alt="image-20210802224540032"></p>
+<p>（他们把每个可用区域分为一个 AZ，即一个数据中心。</p>
+<p>在他们的 EBS 服务中，传输的数据有很多，不仅仅是 Log，还有数据库的 page data，相比于 log，page data 的数据要大很多，所以为了减少这部分的消耗，他们提出了基于服务的数据库 Aurora。</p>
+<h2 id="架构"><a href="#架构" class="headerlink" title="架构"></a>架构</h2><p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210802223640189.png" alt="image-20210802223640189"></p>
+<p>Aurora 采用三个分区，每个分区有一个 Database server 和 两个 Storage server。其中 AZ 1 的 Database server 负责写或读，AZ 2/3 负责读，来减少 AZ 1 的负载。</p>
+<p>为了实现故障容错，他们使用基于 quorum 的机制，即对一个复制数据的副本集合V，读操作和写操作都需要达到一定数量节点同意的阈值，例如读是 $V_r$，写是 $V_w$​，只有同意的节点数量到达阈值才能执行操作。</p>
+<p>所以为了实现读能获取到最近的写，所以 $V_r + V_w &gt; V$ ，同时，写要获得最近的写，以防写顺序出错，所以 $ V_w &gt; V/2$</p>
+<p>如果采用三节点备份的方法，$V_r$ 和$V_w$​都设置为2，即使是多个 Availability Zone(AZ)，即 AZ A,B,C，但如果一个AZ损坏，另一个备份的机器损坏的话，就会导致无法读也无法写。</p>
+<p>所以他们为了实现：</p>
+<ul>
+<li>丢失整个 AZ 加一个节点也能使用</li>
+<li>丢失整个 AZ 能正常写</li>
+</ul>
+<p>他们采用6节点在3 AZ的方式，每个AZ存储两个 copies，$V_r$ 为 3，$V_w$​ 为4，这样，即使一整个AZ损坏，依然能正常写，如果一个AZ加一个节点损坏，那么还能正常读，然后通过增加节点的方式就能正常使用。</p>
+<p>这就是他们采用六节点的原因。</p>
+<p>但是如果是三节点在3 AZ好像也不是不行，$V_r$ 为 1，$V_w$​ 为 2.</p>
+<h2 id="Log"><a href="#Log" class="headerlink" title="Log"></a>Log</h2><p>Log 在 Aurora 中占据了极为重要的地位，对于每次写，都会产生一个 redo-log，redo-log 也被称为物理日志，因为它记录了每个 page 上的具体修改，包括数据的更新、B树节点的分裂合并。Log 在 Database server 和 Storage server 流动的方式为：</p>
+<p><img src="https://gitee.com/bofan-chen/image-hs/raw/master/img/image-20210802225520243.png" alt="image-20210802225520243"></p>
+<p>Log 所具有的属性：</p>
+<ul>
+<li>Log Sequence Number（LSN）：每个日志记录都有的一个值，是由 database server 生成的一个单调递增的值</li>
+<li>Volume Complete LSN（VCL）：每个 Storage server 确认持久化的 LSN</li>
+<li>Consistency Point LSNs（CPLs）：由 database server 提供，database server 通知 storage server 哪些 LSN 可以被持久化，例如回滚的时候根据 CPL 进行回滚</li>
+<li>Volume durable LSN（VDL）：We therefore define VDL or the Volume Durable LSN as the highest  CPL that is smaller than or equal to VCL and truncate all log  records with LSN greater than the VDL. CPL 中最大的并且比 VCL 小，即 database server 确认，storage server 也持久化的 Log，也就是当前确认提交的位置点。</li>
+</ul>
+<p>流程：</p>
+<ol>
+<li>接收记录并添加到内存队列</li>
+<li>持久化日志记录并确认</li>
+<li>组织日志记录并鉴别日志中的缝隙</li>
+<li>通过 Gossip 协议填补对等节点中的缝隙</li>
+<li>将日志记录合并到新版本的数据块中</li>
+<li>定期将日志和新块中转到S3</li>
+<li>定期垃圾回收旧块</li>
+<li>定期对块进行CRC校验</li>
+</ol>
+<h2 id="Read-and-Write"><a href="#Read-and-Write" class="headerlink" title="Read and Write"></a>Read and Write</h2><p>当执行写时，需要考虑 quorum 的机制，例如一个事务的提交 commit log 位点为 100，database server 将事务的 commit log 写进内存队列，等待存储节点的持久化和 ack，各个节点将自己的 VCL 推进并返回给 database server，当由四个节点的 VCL 到达 100，就认为事务初九话完成，然后向客户端返回提交成功。</p>
+<p>当执行读时，就不需要 quorum，database server 存储各个 storage server 的 VCL，当执行读的时候，就直接读 VCL 最大的 storage server，当有多个只读 database server 时，主 database 会链式的传播 VDL, VCL, SCL 信息给从节点。</p>
+<h2 id="Recovery"><a href="#Recovery" class="headerlink" title="Recovery"></a>Recovery</h2><p>由于网速的限制，如果一个节点直接把全部内容复制给另一个节点，几T的数据需要很久才能传输完成，所以他们把数据分块，</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0/" rel="tag"># 论文笔记</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/07/25/BigTable/" rel="prev" title="BigTable">
+      <i class="fa fa-chevron-left"></i> BigTable
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9E%B6%E6%9E%84"><span class="nav-number">1.</span> <span class="nav-text">架构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Log"><span class="nav-number">2.</span> <span class="nav-text">Log</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Read-and-Write"><span class="nav-number">3.</span> <span class="nav-text">Read and Write</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Recovery"><span class="nav-number">4.</span> <span class="nav-text">Recovery</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Bofan Chen"
+      src="/images/logo.jpg">
+  <p class="site-author-name" itemprop="name">Bofan Chen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">70</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">63</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Bofan Chen</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>
